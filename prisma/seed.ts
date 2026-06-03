@@ -32,6 +32,19 @@ async function main() {
   console.log("🧹 Limpando dados antigos…");
   // Ordem respeita as dependências (filhos antes dos pais).
   await prisma.aiInteraction.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.timeEntry.deleteMany();
+  await prisma.cashMovement.deleteMany();
+  await prisma.cashSession.deleteMany();
+  await prisma.saleItem.deleteMany();
+  await prisma.sale.deleteMany();
+  await prisma.purchaseOrderItem.deleteMany();
+  await prisma.purchaseOrder.deleteMany();
+  await prisma.accountReceivable.deleteMany();
+  await prisma.accountPayable.deleteMany();
+  await prisma.reminder.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.customerUser.deleteMany();
   await prisma.attachment.deleteMany();
   await prisma.warranty.deleteMany();
   await prisma.inventoryMovement.deleteMany();
@@ -49,6 +62,57 @@ async function main() {
   await prisma.vehicle.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.box.deleteMany();
+  await prisma.filial.deleteMany();
+  await prisma.workshopSettings.deleteMany();
+
+  // ---------------------------------------------------------
+  // CONFIGURAÇÕES DA OFICINA
+  // ---------------------------------------------------------
+  console.log("🏢 Criando dados da oficina…");
+
+  await prisma.workshopSettings.create({
+    data: {
+      nome: "Irmãos Zimmer LTDA",
+      cnpj: "12.345.678/0001-00",
+      endereco: "Rua Beno Closs, 2065",
+      cidade: "Santa Maria do Herval",
+      estado: "RS",
+      cep: "93730-000",
+      telefone: "(51) 3567-1000",
+      whatsapp: "(51) 99100-0000",
+      email: "contato@irmaoszimmer.com.br",
+      horarios: "Seg a Sex: 08h-18h | Sáb: 08h-12h",
+    },
+  });
+
+  // ---------------------------------------------------------
+  // FILIAIS
+  // ---------------------------------------------------------
+  const matriz = await prisma.filial.create({
+    data: {
+      nome: "Matriz",
+      endereco: "Rua Beno Closs, 2065",
+      cidade: "Santa Maria do Herval",
+      estado: "RS",
+      telefone: "(51) 3567-1000",
+    },
+  });
+
+  // ---------------------------------------------------------
+  // BOXES / ELEVADORES
+  // ---------------------------------------------------------
+  console.log("🔩 Criando boxes/elevadores…");
+  const box1 = await prisma.box.create({
+    data: { nome: "Box 1", descricao: "Box de serviços rápidos" },
+  });
+  const box2 = await prisma.box.create({
+    data: { nome: "Box 2", descricao: "Box de mecânica geral" },
+  });
+  const elevador1 = await prisma.box.create({
+    data: { nome: "Elevador 1", descricao: "Elevador para suspensão e freios" },
+  });
+  const boxes = [box1, box2, elevador1];
 
   // ---------------------------------------------------------
   // USUÁRIOS
@@ -63,6 +127,7 @@ async function main() {
       passwordHash: hash,
       role: "ADMINISTRADOR",
       telefone: "(51) 99999-0001",
+      filialId: matriz.id,
     },
   });
 
@@ -83,6 +148,8 @@ async function main() {
       passwordHash: hash,
       role: "MECANICO",
       telefone: "(51) 99999-0003",
+      filialId: matriz.id,
+      comissaoPercent: dec(8),
     },
   });
 
@@ -93,6 +160,8 @@ async function main() {
       passwordHash: hash,
       role: "MECANICO",
       telefone: "(51) 99999-0004",
+      filialId: matriz.id,
+      comissaoPercent: dec(6),
     },
   });
 
@@ -697,6 +766,7 @@ async function main() {
           descricao: p.nome,
           quantidade: qtd,
           precoUnitario: dec(preco),
+          custoUnitario: dec(Number(p.precoCusto)),
           subtotal: dec(subtotal),
         };
       }
@@ -707,7 +777,10 @@ async function main() {
 
     const created = await prisma.serviceOrder.create({
       data: {
-        numero: gerarNumero("OS", seqOs++),
+        numero: gerarNumero("OS", seqOs),
+        trackingToken: `trk-${new Date().getFullYear()}-${String(seqOs).padStart(4, "0")}`,
+        boxId: boxes[seqOs % boxes.length].id,
+        filialId: matriz.id,
         customerId: cli.customerId,
         vehicleId: cli.vehicleId,
         mecanicoId: mec.id,
@@ -724,6 +797,7 @@ async function main() {
         items: { create: itensData },
       },
     });
+    seqOs++;
 
     ordensCriadas.push({
       id: created.id,
@@ -1065,6 +1139,155 @@ async function main() {
   });
 
   // ---------------------------------------------------------
+  // PORTAL DO CLIENTE (login)
+  // ---------------------------------------------------------
+  console.log("🔐 Criando acessos do portal do cliente…");
+
+  await prisma.customerUser.create({
+    data: {
+      customerId: clientes[0].customerId,
+      email: "joao.wagner@email.com",
+      passwordHash: hash,
+    },
+  });
+  await prisma.customerUser.create({
+    data: {
+      customerId: clientes[1].customerId,
+      email: "duda.klein@email.com",
+      passwordHash: hash,
+    },
+  });
+
+  // ---------------------------------------------------------
+  // AVALIAÇÕES / NPS
+  // ---------------------------------------------------------
+  console.log("⭐ Criando avaliações…");
+
+  if (osEntregue) {
+    await prisma.review.create({
+      data: {
+        serviceOrderId: osEntregue.id,
+        customerId: clientes[osEntregue.clienteIdx].customerId,
+        nota: 10,
+        comentario: "Atendimento excelente e serviço rápido. Recomendo!",
+      },
+    });
+  }
+  if (osConcluida) {
+    await prisma.review.create({
+      data: {
+        serviceOrderId: osConcluida.id,
+        customerId: clientes[osConcluida.clienteIdx].customerId,
+        nota: 8,
+        comentario: "Bom serviço, só demorou um pouco mais do que o previsto.",
+      },
+    });
+  }
+
+  // ---------------------------------------------------------
+  // LEMBRETES
+  // ---------------------------------------------------------
+  console.log("🔔 Criando lembretes…");
+
+  await prisma.reminder.create({
+    data: {
+      tipo: "REVISAO",
+      customerId: clientes[0].customerId,
+      vehicleId: clientes[0].vehicleId,
+      dueDate: emDias(30, 9),
+      canal: "WHATSAPP",
+      status: "PENDENTE",
+    },
+  });
+  await prisma.reminder.create({
+    data: {
+      tipo: "TROCA_OLEO",
+      customerId: clientes[4].customerId,
+      vehicleId: clientes[4].vehicleId,
+      dueDate: emDias(15, 9),
+      canal: "EMAIL",
+      status: "PENDENTE",
+    },
+  });
+  if (osEntregue) {
+    await prisma.reminder.create({
+      data: {
+        tipo: "POS_SERVICO",
+        customerId: clientes[osEntregue.clienteIdx].customerId,
+        serviceOrderId: osEntregue.id,
+        dueDate: emDias(-1, 10),
+        canal: "WHATSAPP",
+        status: "ENVIADO",
+        sentAt: emDias(-1, 10),
+      },
+    });
+  }
+
+  // ---------------------------------------------------------
+  // CONTAS A RECEBER
+  // ---------------------------------------------------------
+  console.log("💰 Criando contas a receber…");
+
+  if (osAprovada) {
+    await prisma.accountReceivable.create({
+      data: {
+        descricao: `Faturamento OS ${osAprovada.numero} (frota)`,
+        customerId: clientes[osAprovada.clienteIdx].customerId,
+        serviceOrderId: osAprovada.id,
+        valor: dec(osAprovada.total),
+        vencimento: emDias(30, 9),
+        recebido: false,
+      },
+    });
+  }
+  if (osEntregue) {
+    await prisma.accountReceivable.create({
+      data: {
+        descricao: `Recebimento OS ${osEntregue.numero}`,
+        customerId: clientes[osEntregue.clienteIdx].customerId,
+        serviceOrderId: osEntregue.id,
+        valor: dec(osEntregue.total),
+        vencimento: emDias(-1, 9),
+        recebido: true,
+        dataRecebimento: emDias(-1, 16),
+      },
+    });
+  }
+
+  // ---------------------------------------------------------
+  // CONTAS A PAGAR
+  // ---------------------------------------------------------
+  console.log("💸 Criando contas a pagar…");
+
+  await prisma.accountPayable.create({
+    data: {
+      descricao: "Compra de óleo e filtros - Lubrificantes Herval",
+      supplierId: fornecedores[3].id,
+      valor: dec(1850),
+      vencimento: emDias(10, 9),
+      pago: false,
+    },
+  });
+  await prisma.accountPayable.create({
+    data: {
+      descricao: "Reposição de pastilhas e discos - Distribuidora Sul",
+      supplierId: fornecedores[0].id,
+      valor: dec(960),
+      vencimento: emDias(-3, 9),
+      pago: true,
+      dataPagamento: emDias(-3, 14),
+    },
+  });
+  await prisma.accountPayable.create({
+    data: {
+      descricao: "Energia elétrica - oficina",
+      valor: dec(720.5),
+      vencimento: emDias(7, 9),
+      pago: false,
+    },
+  });
+
+  // ---------------------------------------------------------
   // RESUMO
   // ---------------------------------------------------------
   const totals = {
@@ -1079,6 +1302,13 @@ async function main() {
     agendamentos: await prisma.appointment.count(),
     inspecoes: await prisma.inspection.count(),
     pagamentos: await prisma.payment.count(),
+    boxes: await prisma.box.count(),
+    filiais: await prisma.filial.count(),
+    portalUsers: await prisma.customerUser.count(),
+    avaliacoes: await prisma.review.count(),
+    lembretes: await prisma.reminder.count(),
+    contasReceber: await prisma.accountReceivable.count(),
+    contasPagar: await prisma.accountPayable.count(),
   };
 
   console.log("\n✅ Seed concluído com sucesso!");

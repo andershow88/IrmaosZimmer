@@ -8,7 +8,7 @@ import {
   PackageX,
   DollarSign,
 } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { prisma } from "@/lib/db";
 import { formatBRL, formatNumber } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
@@ -21,7 +21,7 @@ import { PecasList, type PecaRow } from "@/components/estoque/pecas-list";
 export const dynamic = "force-dynamic";
 
 export default async function EstoquePage() {
-  await requireUser();
+  await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
 
   const parts = await prisma.part.findMany({
     include: { supplier: { select: { nome: true } } },

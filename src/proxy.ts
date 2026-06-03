@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
+// Next 16: o antigo "middleware" foi renomeado para "proxy" (mesma assinatura).
+// Esta função roda antes das rotas para proteger a aplicação exigindo sessão.
+
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "dev-zimmeros-secret-change"
 );
@@ -15,7 +18,7 @@ const PUBLIC = [
   "/favicon",
 ];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (

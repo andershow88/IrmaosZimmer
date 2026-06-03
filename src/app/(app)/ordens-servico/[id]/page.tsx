@@ -8,6 +8,8 @@ import {
   Gauge,
   Calendar,
   Wrench,
+  ShieldCheck,
+  Paperclip,
 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -25,6 +27,10 @@ import { ItemAdd } from "@/components/ordens/item-add";
 import { ItemList } from "@/components/ordens/item-list";
 import { AiButtons } from "@/components/ordens/ai-buttons";
 import { MecanicoSelect } from "@/components/ordens/mecanico-select";
+import { GarantiaForm } from "@/components/garantias/garantia-form";
+import { GarantiasList } from "@/components/garantias/garantias-list";
+import { AnexoUpload } from "@/components/anexos/anexo-upload";
+import { AnexosGaleria } from "@/components/anexos/anexos-galeria";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +65,8 @@ export default async function OSDetailPage({
       vehicle: true,
       mecanico: { select: { id: true, name: true } },
       items: { orderBy: { tipo: "asc" } },
+      warranties: { orderBy: { createdAt: "desc" } },
+      attachments: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -197,6 +205,54 @@ export default async function OSDetailPage({
                   }))}
                 />
               )}
+            </CardBody>
+          </Card>
+
+          {/* Garantias */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <span className="inline-flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-accent" />
+                  Garantias
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardBody className="flex flex-col gap-5">
+              <GarantiasList
+                garantias={os.warranties.map((g) => ({
+                  id: g.id,
+                  descricao: g.descricao,
+                  validadeAte: g.validadeAte,
+                  observacoes: g.observacoes,
+                  createdAt: g.createdAt,
+                }))}
+              />
+              <GarantiaForm serviceOrderId={os.id} />
+            </CardBody>
+          </Card>
+
+          {/* Anexos / Fotos */}
+          <Card>
+            <CardHeader className="flex items-center justify-between gap-3">
+              <CardTitle>
+                <span className="inline-flex items-center gap-2">
+                  <Paperclip className="h-4 w-4 text-accent" />
+                  Anexos
+                </span>
+              </CardTitle>
+              <AnexoUpload serviceOrderId={os.id} />
+            </CardHeader>
+            <CardBody>
+              <AnexosGaleria
+                anexos={os.attachments.map((a) => ({
+                  id: a.id,
+                  url: a.url,
+                  nome: a.nome,
+                  tipo: a.tipo,
+                  createdAt: a.createdAt,
+                }))}
+              />
             </CardBody>
           </Card>
         </div>

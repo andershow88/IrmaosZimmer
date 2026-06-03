@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CreditCard, ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,7 +10,7 @@ import { PagamentoForm, type OsOption } from "@/components/pagamentos/pagamento-
 export const dynamic = "force-dynamic";
 
 export default async function NovoPagamentoPage() {
-  await requireUser();
+  await requirePageRole(["FINANCEIRO", "ADMINISTRADOR"]);
 
   const ordens = await prisma.serviceOrder.findMany({
     where: { status: { notIn: ["CANCELADA"] } },

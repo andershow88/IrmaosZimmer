@@ -3,13 +3,14 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { Building2, Save } from "lucide-react";
+import { Building2, Loader2, Save, Search } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardBody } from "@/components/ui/card";
 import { maskCPFCNPJ, maskTelefone } from "@/lib/masks";
+import type { DadosCNPJ } from "@/lib/lookups";
 import type { FornecedorActionState } from "@/server/fornecedores";
 
 export type FornecedorFormValues = {
@@ -54,6 +55,43 @@ export function FornecedorForm({
   const [cnpj, setCnpj] = useState(defaultValues?.cnpj ?? "");
   const [telefone, setTelefone] = useState(defaultValues?.telefone ?? "");
   const [whatsapp, setWhatsapp] = useState(defaultValues?.whatsapp ?? "");
+  const [nome, setNome] = useState(defaultValues?.nome ?? "");
+  const [email, setEmail] = useState(defaultValues?.email ?? "");
+  const [endereco, setEndereco] = useState(defaultValues?.endereco ?? "");
+
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [cnpjInfo, setCnpjInfo] = useState<string | null>(null);
+
+  async function buscarCnpj() {
+    const digits = cnpj.replace(/\D/g, "");
+    setCnpjInfo(null);
+    if (digits.length !== 14) {
+      setCnpjInfo("Informe um CNPJ com 14 dígitos.");
+      return;
+    }
+    setCnpjLoading(true);
+    try {
+      const res = await fetch(`/api/lookups?tipo=cnpj&cnpj=${digits}`);
+      const json = (await res.json()) as { data?: DadosCNPJ; error?: string };
+      if (!res.ok || !json.data) {
+        setCnpjInfo(json.error ?? "CNPJ não encontrado.");
+        return;
+      }
+      const d = json.data;
+      if (d.nome) setNome(d.nome);
+      if (d.endereco) {
+        const cidadeUf = [d.cidade, d.uf].filter(Boolean).join("/");
+        setEndereco([d.endereco, cidadeUf].filter(Boolean).join(", "));
+      }
+      setEmail((prev) => prev || d.email);
+      setTelefone((prev) => prev || (d.telefone ? maskTelefone(d.telefone) : ""));
+      setCnpjInfo("Dados preenchidos pelo CNPJ.");
+    } catch {
+      setCnpjInfo("Falha na consulta do CNPJ. Tente novamente.");
+    } finally {
+      setCnpjLoading(false);
+    }
+  }
 
   const fieldErrors = state.fieldErrors ?? {};
 
@@ -74,7 +112,8 @@ export function FornecedorForm({
             <Input
               id="nome"
               name="nome"
-              defaultValue={defaultValues?.nome ?? ""}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
               placeholder="Ex.: Auto Peças Central Ltda."
               autoFocus
               required
@@ -86,17 +125,35 @@ export function FornecedorForm({
 
           <div>
             <Label htmlFor="cnpj">CNPJ</Label>
-            <Input
-              id="cnpj"
-              name="cnpj"
-              value={cnpj}
-              onChange={(e) => setCnpj(maskCPFCNPJ(e.target.value))}
-              placeholder="00.000.000/0000-00"
-              inputMode="numeric"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="cnpj"
+                name="cnpj"
+                value={cnpj}
+                onChange={(e) => setCnpj(maskCPFCNPJ(e.target.value))}
+                placeholder="00.000.000/0000-00"
+                inputMode="numeric"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={buscarCnpj}
+                disabled={cnpjLoading}
+                className="shrink-0"
+              >
+                {cnpjLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+                Buscar CNPJ
+              </Button>
+            </div>
             {fieldErrors.cnpj && (
               <p className="mt-1 text-xs text-danger">{fieldErrors.cnpj}</p>
             )}
+            {cnpjInfo && <p className="mt-1 text-xs text-muted">{cnpjInfo}</p>}
           </div>
 
           <div>
@@ -148,7 +205,8 @@ export function FornecedorForm({
               id="email"
               name="email"
               type="email"
-              defaultValue={defaultValues?.email ?? ""}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="contato@fornecedor.com.br"
             />
             {fieldErrors.email && (
@@ -161,7 +219,8 @@ export function FornecedorForm({
             <Input
               id="endereco"
               name="endereco"
-              defaultValue={defaultValues?.endereco ?? ""}
+              value={endereco}
+              onChange={(e) => setEndereco(e.target.value)}
               placeholder="Rua, número, bairro, cidade/UF"
             />
             {fieldErrors.endereco && (

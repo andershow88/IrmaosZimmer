@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireUserForAction } from "@/lib/auth";
+import { requireRoleForAction } from "@/lib/permissions-server";
+
+const ESTOQUE_ROLES = ["ESTOQUE", "ADMINISTRADOR"] as const;
 
 // ============================================================
 // Tipos de retorno das Server Actions
@@ -81,7 +83,7 @@ function optStr(value: FormDataEntryValue | null): string | null {
 // ============================================================
 
 export async function createPeca(formData: FormData): Promise<ActionResult> {
-  await requireUserForAction();
+  await requireRoleForAction([...ESTOQUE_ROLES]);
 
   const parsed = pecaSchema.safeParse({
     nome: str(formData.get("nome")),
@@ -129,7 +131,7 @@ export async function updatePeca(
   id: string,
   formData: FormData
 ): Promise<ActionResult> {
-  await requireUserForAction();
+  await requireRoleForAction([...ESTOQUE_ROLES]);
 
   if (!id) return { ok: false, error: "Peça não encontrada." };
 
@@ -178,7 +180,7 @@ export async function updatePeca(
 }
 
 export async function deletePeca(id: string): Promise<ActionResult> {
-  await requireUserForAction();
+  await requireRoleForAction([...ESTOQUE_ROLES]);
 
   if (!id) return { ok: false, error: "Peça não encontrada." };
 
@@ -203,7 +205,7 @@ export async function deletePeca(id: string): Promise<ActionResult> {
 export async function registrarMovimentacao(
   formData: FormData
 ): Promise<ActionResult> {
-  const user = await requireUserForAction();
+  const user = await requireRoleForAction([...ESTOQUE_ROLES]);
 
   const parsed = movimentacaoSchema.safeParse({
     partId: str(formData.get("partId")),

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CreditCard, ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { PagamentoForm, type OsOption } from "@/components/pagamentos/pagamento-form";
@@ -19,7 +19,7 @@ export default async function EditarPagamentoPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireUser();
+  await requirePageRole(["FINANCEIRO", "ADMINISTRADOR"]);
   const { id } = await params;
 
   const pagamento = await prisma.payment.findUnique({

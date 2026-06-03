@@ -4,13 +4,14 @@ import {
   Wrench,
   Package,
   Users,
-  CreditCard,
   AlertTriangle,
   UserCog,
   FileCheck2,
   TrendingUp,
+  Percent,
+  Coins,
 } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { formatBRL, formatNumber } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -25,6 +26,9 @@ import { RankingChart } from "@/components/relatorios/ranking-chart";
 import { ProdutividadeChart } from "@/components/relatorios/produtividade-chart";
 import { OrcamentosChart } from "@/components/relatorios/orcamentos-chart";
 import { PeriodoSelect } from "@/components/relatorios/periodo-select";
+import { MargemChart } from "@/components/relatorios/margem-chart";
+import { ComissaoChart } from "@/components/relatorios/comissao-chart";
+import { ExportButton } from "@/components/relatorios/export-button";
 import { CHART_COLORS } from "@/components/relatorios/chart-theme";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +40,7 @@ export default async function RelatoriosPage({
 }: {
   searchParams: Promise<{ meses?: string }>;
 }) {
-  await requireUser();
+  await requirePageRole(["FINANCEIRO", "ADMINISTRADOR"]);
 
   const sp = await searchParams;
   const mesesParam = Number(sp.meses);
@@ -59,7 +63,12 @@ export default async function RelatoriosPage({
         title="Relatórios"
         description="Indicadores e tendências da oficina."
         icon={BarChart3}
-        action={<PeriodoSelect valor={meses} />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodoSelect valor={meses} />
+            <ExportButton meses={meses} />
+          </div>
+        }
       />
 
       {/* Resumo */}
@@ -79,11 +88,11 @@ export default async function RelatoriosPage({
           hint="Total cadastradas"
         />
         <StatCard
-          label="A receber"
-          value={formatBRL(data.pagamentosPendentes.total)}
-          icon={CreditCard}
-          tone="warning"
-          hint={`${formatNumber(data.pagamentosPendentes.quantidade)} pagamento(s) em aberto`}
+          label="Margem no período"
+          value={formatBRL(data.margemTotalPeriodo)}
+          icon={Coins}
+          tone="info"
+          hint="Mão de obra + peças − custo das peças"
         />
         <StatCard
           label="Peças em falta"
@@ -115,6 +124,34 @@ export default async function RelatoriosPage({
               <ReceitaChart data={data.receitaPorMes} />
             ) : (
               <SemDadosGrafico texto="Nenhum pagamento pago no período." />
+            )}
+          </ReportCard>
+
+          {/* Margem por período */}
+          <ReportCard
+            title="Margem por período"
+            icon={Percent}
+            description="Receita (mão de obra + peças) menos o custo das peças, por mês de abertura da OS"
+            className="lg:col-span-2"
+          >
+            {data.margemPorMes.some((m) => m.receita > 0 || m.custo > 0) ? (
+              <MargemChart data={data.margemPorMes} />
+            ) : (
+              <SemDadosGrafico texto="Sem ordens de serviço no período para calcular a margem." />
+            )}
+          </ReportCard>
+
+          {/* Comissão por mecânico */}
+          <ReportCard
+            title="Comissão por mecânico"
+            icon={Coins}
+            description="Faturamento das OS atribuídas × percentual de comissão do mecânico"
+            className="lg:col-span-2"
+          >
+            {data.comissaoMecanicos.length > 0 ? (
+              <ComissaoChart data={data.comissaoMecanicos} />
+            ) : (
+              <SemDadosGrafico texto="Nenhuma OS atribuída a mecânicos no período." />
             )}
           </ReportCard>
 

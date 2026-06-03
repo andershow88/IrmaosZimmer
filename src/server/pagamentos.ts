@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireUserForAction } from "@/lib/auth";
+import { requireRoleForAction } from "@/lib/permissions-server";
+import { logAudit } from "@/lib/audit";
 import type { StatusPagamento } from "@prisma/client";
 import { deriveStatus, type ActionResult } from "@/components/pagamentos/constants";
+
+const FINANCEIRO_ROLES = ["FINANCEIRO", "ADMINISTRADOR"] as const;
 
 // ---------------------------------------------------------------------------
 // Validação (pt-BR)
@@ -47,7 +50,7 @@ const updateSchema = registrarSchema.extend({
 
 /** Registra um novo pagamento, derivando o status pelos valores. */
 export async function registrarPagamento(formData: FormData): Promise<ActionResult> {
-  await requireUserForAction();
+  const actor = await requireRoleForAction([...FINANCEIRO_ROLES]);
 
   const parsed = registrarSchema.safeParse({
     serviceOrderId: formData.get("serviceOrderId"),
@@ -85,13 +88,21 @@ export async function registrarPagamento(formData: FormData): Promise<ActionResu
     },
   });
 
+  await logAudit(
+    actor.id,
+    "CRIAR",
+    "Payment",
+    created.id,
+    `Pagamento registrado (OS ${os.numero}): pago ${data.valorPago} de ${data.valorTotal}, status ${status}.`
+  );
+
   revalidatePath("/pagamentos");
   return { ok: true, id: created.id };
 }
 
 /** Atualiza um pagamento existente. Permite forçar VENCIDO/CANCELADO. */
 export async function updatePagamento(formData: FormData): Promise<ActionResult> {
-  await requireUserForAction();
+  const actor = await requireRoleForAction([...FINANCEIRO_ROLES]);
 
   const parsed = updateSchema.safeParse({
     id: formData.get("id"),
@@ -134,6 +145,14 @@ export async function updatePagamento(formData: FormData): Promise<ActionResult>
     },
   });
 
+  await logAudit(
+    actor.id,
+    "ATUALIZAR",
+    "Payment",
+    data.id,
+    `Pagamento atualizado: pago ${data.valorPago} de ${data.valorTotal}, status ${status}.`
+  );
+
   revalidatePath("/pagamentos");
   revalidatePath(`/pagamentos/${data.id}`);
   return { ok: true, id: data.id };
@@ -141,12 +160,20 @@ export async function updatePagamento(formData: FormData): Promise<ActionResult>
 
 /** Exclui um pagamento. */
 export async function deletePagamento(id: string): Promise<ActionResult> {
-  await requireUserForAction();
+  const actor = await requireRoleForAction([...FINANCEIRO_ROLES]);
 
   const existing = await prisma.payment.findUnique({ where: { id } });
   if (!existing) return { ok: false, error: "Pagamento não encontrado." };
 
   await prisma.payment.delete({ where: { id } });
+
+  await logAudit(
+    actor.id,
+    "EXCLUIR",
+    "Payment",
+    id,
+    `Pagamento excluído (valor total ${existing.valorTotal}).`
+  );
 
   revalidatePath("/pagamentos");
   return { ok: true, id };

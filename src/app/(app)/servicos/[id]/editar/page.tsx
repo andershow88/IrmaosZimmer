@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Wrench } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { ServicoForm, type ServicoFormValues } from "@/components/servicos/servico-form";
@@ -14,7 +14,7 @@ export default async function EditarServicoPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireUser();
+  await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
   const { id } = await params;
 
   const servico = await prisma.service.findUnique({ where: { id } });

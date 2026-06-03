@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus, Wrench, Pencil } from "lucide-react";
 import type { CategoriaServico, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { formatBRL } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export default async function ServicosPage({
 }: {
   searchParams: Promise<{ q?: string; categoria?: string; ativo?: string }>;
 }) {
-  await requireUser();
+  await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
   const sp = await searchParams;
 
   const q = (sp.q ?? "").trim();

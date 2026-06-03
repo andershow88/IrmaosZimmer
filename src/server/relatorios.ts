@@ -52,6 +52,23 @@ export type EstoqueBaixoItem = {
 export type ProdutividadeMecanico = { nome: string; ordens: number };
 export type OrcamentoComparativo = { aprovados: number; rejeitados: number };
 
+/** Margem agregada por mês (receita de mão de obra + peças - custo das peças). */
+export type MargemMensal = {
+  periodo: string;
+  receita: number;
+  custo: number;
+  margem: number;
+};
+
+/** Produtividade + comissão por mecânico, baseada na soma das OS atribuídas. */
+export type ComissaoMecanico = {
+  nome: string;
+  ordens: number;
+  faturamento: number;
+  comissaoPercent: number;
+  comissao: number;
+};
+
 export type RelatoriosData = {
   receitaPorMes: ReceitaMensal[];
   receitaTotalPeriodo: number;
@@ -64,6 +81,9 @@ export type RelatoriosData = {
   estoqueBaixo: EstoqueBaixoItem[];
   produtividadeMecanicos: ProdutividadeMecanico[];
   orcamentos: OrcamentoComparativo;
+  margemPorMes: MargemMensal[];
+  margemTotalPeriodo: number;
+  comissaoMecanicos: ComissaoMecanico[];
 };
 
 const STATUS_OS_LABELS: Record<string, string> = {
@@ -309,6 +329,119 @@ export async function getOrcamentosComparativo(): Promise<OrcamentoComparativo> 
 }
 
 // ------------------------------------------------------------
+// Margem por OS / por período
+// Margem da OS = (valorMaoObra + Σ preço de venda das peças)
+//              - Σ custoUnitario das peças.
+// Agrupamos por mês de abertura da OS para o gráfico.
+// ------------------------------------------------------------
+
+export async function getMargemPorMes(meses = 6): Promise<{
+  series: MargemMensal[];
+  total: number;
+}> {
+  const inicio = startOfMonthOffset(-(meses - 1));
+
+  const ordens = await prisma.serviceOrder.findMany({
+    where: {
+      dataAbertura: { gte: inicio },
+      status: { notIn: ["CANCELADA"] },
+    },
+    select: {
+      dataAbertura: true,
+      valorMaoObra: true,
+      items: {
+        where: { tipo: "PECA" },
+        select: { quantidade: true, precoUnitario: true, custoUnitario: true },
+      },
+    },
+  });
+
+  const buckets = new Map<
+    string,
+    { periodo: string; receita: number; custo: number; ordem: number }
+  >();
+  for (let i = 0; i < meses; i++) {
+    const d = startOfMonthOffset(-(meses - 1) + i);
+    buckets.set(`${d.getFullYear()}-${d.getMonth()}`, {
+      periodo: rotuloMesAno(d),
+      receita: 0,
+      custo: 0,
+      ordem: i,
+    });
+  }
+
+  for (const os of ordens) {
+    const d = new Date(os.dataAbertura);
+    const bucket = buckets.get(`${d.getFullYear()}-${d.getMonth()}`);
+    if (!bucket) continue;
+
+    let receitaPecas = 0;
+    let custoPecas = 0;
+    for (const item of os.items) {
+      receitaPecas += Number(item.precoUnitario) * item.quantidade;
+      custoPecas += Number(item.custoUnitario ?? 0) * item.quantidade;
+    }
+    bucket.receita += Number(os.valorMaoObra) + receitaPecas;
+    bucket.custo += custoPecas;
+  }
+
+  const series = [...buckets.values()]
+    .sort((a, b) => a.ordem - b.ordem)
+    .map(({ periodo, receita, custo }) => ({
+      periodo,
+      receita,
+      custo,
+      margem: receita - custo,
+    }));
+
+  const total = series.reduce((acc, s) => acc + s.margem, 0);
+  return { series, total };
+}
+
+// ------------------------------------------------------------
+// Comissão por mecânico
+// Faturamento por mecânico = soma do `total` das OS atribuídas (exceto canceladas).
+// Comissão = faturamento * (User.comissaoPercent / 100).
+// ------------------------------------------------------------
+
+export async function getComissaoMecanicos(limite = 10): Promise<ComissaoMecanico[]> {
+  const grupos = await prisma.serviceOrder.groupBy({
+    by: ["mecanicoId"],
+    where: { mecanicoId: { not: null }, status: { notIn: ["CANCELADA"] } },
+    _count: { _all: true },
+    _sum: { total: true },
+  });
+
+  if (grupos.length === 0) return [];
+
+  const ids = grupos
+    .map((g) => g.mecanicoId)
+    .filter((id): id is string => id !== null);
+
+  const mecanicos = await prisma.user.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, name: true, comissaoPercent: true },
+  });
+  const porId = new Map(mecanicos.map((m) => [m.id, m]));
+
+  return grupos
+    .map((g) => {
+      const m = g.mecanicoId ? porId.get(g.mecanicoId) : undefined;
+      const faturamento = Number(g._sum.total ?? 0);
+      const comissaoPercent = Number(m?.comissaoPercent ?? 0);
+      return {
+        nome: m?.name ?? "Sem mecânico",
+        ordens: g._count._all,
+        faturamento,
+        comissaoPercent,
+        comissao: faturamento * (comissaoPercent / 100),
+      };
+    })
+    .sort((a, b) => b.faturamento - a.faturamento)
+    .slice(0, limite);
+}
+
+// ------------------------------------------------------------
 // Agregador único usado pela página
 // ------------------------------------------------------------
 
@@ -323,6 +456,8 @@ export async function getRelatoriosData(meses = 6): Promise<RelatoriosData> {
     estoqueBaixo,
     produtividadeMecanicos,
     orcamentos,
+    margem,
+    comissaoMecanicos,
   ] = await Promise.all([
     getReceitaPorMes(meses),
     getOsPorStatus(),
@@ -333,6 +468,8 @@ export async function getRelatoriosData(meses = 6): Promise<RelatoriosData> {
     getEstoqueBaixo(),
     getProdutividadeMecanicos(),
     getOrcamentosComparativo(),
+    getMargemPorMes(meses),
+    getComissaoMecanicos(),
   ]);
 
   return {
@@ -347,5 +484,8 @@ export async function getRelatoriosData(meses = 6): Promise<RelatoriosData> {
     estoqueBaixo,
     produtividadeMecanicos,
     orcamentos,
+    margemPorMes: margem.series,
+    margemTotalPeriodo: margem.total,
+    comissaoMecanicos,
   };
 }

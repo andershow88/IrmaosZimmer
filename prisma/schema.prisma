@@ -135,13 +135,16 @@ enum TipoInteracaoIA {
 // ============================================================
 
 model User {
-  id           String  @id @default(cuid())
-  name         String
-  email        String  @unique
-  passwordHash String
-  role         Role    @default(ATENDENTE)
-  ativo        Boolean @default(true)
-  telefone     String?
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  passwordHash    String
+  role            Role     @default(ATENDENTE)
+  ativo           Boolean  @default(true)
+  telefone        String?
+  comissaoPercent Decimal? @default(0) @db.Decimal(5, 2)
+  filialId        String?
+  filial          Filial?  @relation(fields: [filialId], references: [id], onDelete: SetNull)
 
   lastLoginAt DateTime?
   createdAt   DateTime  @default(now())
@@ -151,9 +154,12 @@ model User {
   agendamentos      Appointment[]   @relation("MecanicoAgendamento")
   inspecoes         Inspection[]
   aiInteractions    AiInteraction[]
+  timeEntries       TimeEntry[]
+  auditLogs         AuditLog[]
 
   @@index([role])
   @@index([ativo])
+  @@index([filialId])
 }
 
 // ============================================================
@@ -181,6 +187,11 @@ model Customer {
   serviceOrders ServiceOrder[]
   quotes        Quote[]
   appointments  Appointment[]
+  portalUser    CustomerUser?
+  reviews       Review[]
+  reminders     Reminder[]
+  sales         Sale[]
+  accountsReceivable AccountReceivable[]
 
   @@index([nome])
   @@index([cpfCnpj])
@@ -251,7 +262,9 @@ model Supplier {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  parts Part[]
+  parts            Part[]
+  purchaseOrders   PurchaseOrder[]
+  accountsPayable  AccountPayable[]
 
   @@index([nome])
 }
@@ -272,9 +285,11 @@ model Part {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  movements  InventoryMovement[]
-  osItems    ServiceOrderItem[]
-  quoteItems QuoteItem[]
+  movements          InventoryMovement[]
+  osItems            ServiceOrderItem[]
+  quoteItems         QuoteItem[]
+  saleItems          SaleItem[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@index([nome])
   @@index([supplierId])
@@ -306,22 +321,34 @@ model ServiceOrder {
   total            Decimal      @default(0) @db.Decimal(10, 2)
   obsInternas      String?      @db.Text
   obsCliente       String?      @db.Text
+  trackingToken    String?      @unique
+  boxId            String?
+  box              Box?         @relation(fields: [boxId], references: [id], onDelete: SetNull)
+  filialId         String?
+  filial           Filial?      @relation(fields: [filialId], references: [id], onDelete: SetNull)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  items       ServiceOrderItem[]
-  quotes      Quote[]
-  inspections Inspection[]
-  payments    Payment[]
-  movements   InventoryMovement[]
-  warranties  Warranty[]
-  attachments Attachment[]
+  items              ServiceOrderItem[]
+  quotes             Quote[]
+  inspections        Inspection[]
+  payments           Payment[]
+  movements          InventoryMovement[]
+  warranties         Warranty[]
+  attachments        Attachment[]
+  timeEntries        TimeEntry[]
+  accountReceivables AccountReceivable[]
+  reviews            Review[]
+  reminders          Reminder[]
+  sales              Sale[]
 
   @@index([numero])
   @@index([status])
   @@index([customerId])
   @@index([vehicleId])
   @@index([mecanicoId])
+  @@index([boxId])
+  @@index([filialId])
 }
 
 model ServiceOrderItem {
@@ -336,6 +363,7 @@ model ServiceOrderItem {
   descricao      String
   quantidade     Int          @default(1)
   precoUnitario  Decimal      @db.Decimal(10, 2)
+  custoUnitario  Decimal?     @db.Decimal(10, 2)
   subtotal       Decimal      @db.Decimal(10, 2)
 
   @@index([serviceOrderId])
@@ -409,6 +437,10 @@ model Appointment {
   duracaoMin      Int               @default(60)
   status          StatusAgendamento @default(AGENDADO)
   observacoes     String?           @db.Text
+  boxId           String?
+  box             Box?              @relation(fields: [boxId], references: [id], onDelete: SetNull)
+  filialId        String?
+  filial          Filial?           @relation(fields: [filialId], references: [id], onDelete: SetNull)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -417,6 +449,8 @@ model Appointment {
   @@index([customerId])
   @@index([vehicleId])
   @@index([mecanicoId])
+  @@index([boxId])
+  @@index([filialId])
 }
 
 // ============================================================
@@ -542,4 +576,310 @@ model AiInteraction {
 
   @@index([userId, createdAt])
   @@index([tipo, createdAt])
+}
+
+// ============================================================
+// CONFIGURAÇÕES DA OFICINA
+// ============================================================
+
+model WorkshopSettings {
+  id        String   @id @default(cuid())
+  nome      String
+  cnpj      String?
+  endereco  String?
+  cidade    String?
+  estado    String?
+  cep       String?
+  telefone  String?
+  whatsapp  String?
+  email     String?
+  logoUrl   String?
+  horarios  String?  @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================
+// FILIAIS (MULTI-STANDORT)
+// ============================================================
+
+model Filial {
+  id        String   @id @default(cuid())
+  nome      String
+  endereco  String?
+  cidade    String?
+  estado    String?
+  telefone  String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  serviceOrders ServiceOrder[]
+  appointments  Appointment[]
+
+  @@index([ativo])
+}
+
+// ============================================================
+// BOXES / ELEVADORES (AGENDA)
+// ============================================================
+
+model Box {
+  id        String   @id @default(cuid())
+  nome      String
+  descricao String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  serviceOrders ServiceOrder[]
+  appointments  Appointment[]
+
+  @@index([ativo])
+}
+
+// ============================================================
+// PORTAL DO CLIENTE
+// ============================================================
+
+model CustomerUser {
+  id           String   @id @default(cuid())
+  customerId   String   @unique
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  email        String   @unique
+  passwordHash String
+  ativo        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+}
+
+// ============================================================
+// AVALIAÇÕES / NPS
+// ============================================================
+
+model Review {
+  id             String        @id @default(cuid())
+  serviceOrderId String?
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  customerId     String?
+  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  nota           Int
+  comentario     String?       @db.Text
+  createdAt      DateTime      @default(now())
+
+  @@index([serviceOrderId])
+  @@index([customerId])
+  @@index([nota])
+}
+
+// ============================================================
+// LEMBRETES
+// ============================================================
+
+model Reminder {
+  id             String        @id @default(cuid())
+  tipo           String
+  customerId     String?
+  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  vehicleId      String?
+  serviceOrderId String?
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  dueDate        DateTime
+  canal          String?
+  status         String        @default("PENDENTE")
+  sentAt         DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([customerId])
+  @@index([serviceOrderId])
+}
+
+// ============================================================
+// COMPRAS (PURCHASE ORDERS)
+// ============================================================
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  numero      String   @unique
+  status      String   @default("RASCUNHO")
+  total       Decimal  @default(0) @db.Decimal(10, 2)
+  observacoes String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items PurchaseOrderItem[]
+
+  @@index([numero])
+  @@index([status])
+  @@index([supplierId])
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  partId          String?
+  part            Part?         @relation(fields: [partId], references: [id], onDelete: SetNull)
+  descricao       String
+  quantidade      Int
+  custoUnitario   Decimal       @db.Decimal(10, 2)
+  subtotal        Decimal       @db.Decimal(10, 2)
+
+  @@index([purchaseOrderId])
+  @@index([partId])
+}
+
+// ============================================================
+// APONTAMENTO DE HORAS
+// ============================================================
+
+model TimeEntry {
+  id             String       @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inicio         DateTime
+  fim            DateTime?
+  minutos        Int?
+  observacao     String?      @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([serviceOrderId])
+  @@index([userId])
+}
+
+// ============================================================
+// LOG DE AUDITORIA
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  acao       String
+  entidade   String
+  entidadeId String?
+  detalhe    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entidade, entidadeId])
+}
+
+// ============================================================
+// FINANCEIRO - CONTAS A PAGAR / RECEBER
+// ============================================================
+
+model AccountPayable {
+  id            String    @id @default(cuid())
+  descricao     String
+  supplierId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  valor         Decimal   @db.Decimal(10, 2)
+  vencimento    DateTime
+  pago          Boolean   @default(false)
+  dataPagamento DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([pago])
+  @@index([vencimento])
+  @@index([supplierId])
+}
+
+model AccountReceivable {
+  id              String        @id @default(cuid())
+  descricao       String
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  serviceOrderId  String?
+  serviceOrder    ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  valor           Decimal       @db.Decimal(10, 2)
+  vencimento      DateTime
+  recebido        Boolean       @default(false)
+  dataRecebimento DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([recebido])
+  @@index([vencimento])
+  @@index([customerId])
+  @@index([serviceOrderId])
+}
+
+// ============================================================
+// FECHAMENTO DE CAIXA
+// ============================================================
+
+model CashSession {
+  id              String    @id @default(cuid())
+  abertura        DateTime  @default(now())
+  fechamento      DateTime?
+  valorAbertura   Decimal   @default(0) @db.Decimal(10, 2)
+  valorFechamento Decimal?  @db.Decimal(10, 2)
+  userId          String?
+  status          String    @default("ABERTO")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  movements CashMovement[]
+
+  @@index([status])
+}
+
+model CashMovement {
+  id            String      @id @default(cuid())
+  cashSessionId String
+  cashSession   CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  tipo          String
+  valor         Decimal     @db.Decimal(10, 2)
+  descricao     String?
+  formaPagamento String?
+  createdAt     DateTime    @default(now())
+
+  @@index([cashSessionId])
+}
+
+// ============================================================
+// PDV / BALCÃO (VENDAS DE AUTOPEÇAS)
+// ============================================================
+
+model Sale {
+  id             String          @id @default(cuid())
+  numero         String          @unique
+  customerId     String?
+  customer       Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  serviceOrderId String?
+  serviceOrder   ServiceOrder?   @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  total          Decimal         @default(0) @db.Decimal(10, 2)
+  formaPagamento FormaPagamento?
+  status         String          @default("CONCLUIDA")
+  createdAt      DateTime        @default(now())
+
+  items SaleItem[]
+
+  @@index([numero])
+  @@index([status])
+  @@index([customerId])
+  @@index([serviceOrderId])
+}
+
+model SaleItem {
+  id            String  @id @default(cuid())
+  saleId        String
+  sale          Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  partId        String?
+  part          Part?   @relation(fields: [partId], references: [id], onDelete: SetNull)
+  descricao     String
+  quantidade    Int
+  precoUnitario Decimal @db.Decimal(10, 2)
+  subtotal      Decimal @db.Decimal(10, 2)
+
+  @@index([saleId])
+  @@index([partId])
 }

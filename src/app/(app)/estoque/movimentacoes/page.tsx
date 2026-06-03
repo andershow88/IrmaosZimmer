@@ -7,7 +7,7 @@ import {
   SlidersHorizontal,
   History,
 } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { prisma } from "@/lib/db";
 import { formatDateTimeBR, formatNumber } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
@@ -30,7 +30,7 @@ const TIPO_LABEL = {
 } as const;
 
 export default async function MovimentacoesPage() {
-  await requireUser();
+  await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
 
   const [parts, movements] = await Promise.all([
     prisma.part.findMany({

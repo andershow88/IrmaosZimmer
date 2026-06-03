@@ -22,6 +22,12 @@ node_modules
 .DS_Store
 *.pem
 
+# uploads (arquivos enviados pelos usuários)
+/public/uploads
+
+# assets brutos de logo/favicon (não versionar)
+/logo_und_favicons
+
 # debug
 npm-debug.log*
 yarn-debug.log*

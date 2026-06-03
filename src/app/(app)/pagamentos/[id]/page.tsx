@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil, ReceiptText } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { formatBRL, formatDateBR } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -18,7 +18,7 @@ export default async function ReciboPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireUser();
+  await requirePageRole(["FINANCEIRO", "ADMINISTRADOR"]);
   const { id } = await params;
 
   const pagamento = await prisma.payment.findUnique({

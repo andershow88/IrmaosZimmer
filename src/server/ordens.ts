@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUserForAction } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import type { Prisma, StatusOS, PrioridadeOS } from "@prisma/client";
 
 const ROUTE = "/ordens-servico";
@@ -81,7 +82,7 @@ export type CreateOSResult =
   | { ok: false; error: string };
 
 export async function createOS(formData: FormData): Promise<CreateOSResult> {
-  await requireUserForAction();
+  const actor = await requireUserForAction();
 
   const parsed = createOSSchema.safeParse({
     customerId: formData.get("customerId"),
@@ -126,6 +127,14 @@ export async function createOS(formData: FormData): Promise<CreateOSResult> {
     },
   });
 
+  await logAudit(
+    actor.id,
+    "CRIAR",
+    "ServiceOrder",
+    os.id,
+    `Ordem de serviço ${os.numero} aberta.`
+  );
+
   revalidatePath(ROUTE);
   return { ok: true, id: os.id };
 }
@@ -150,16 +159,25 @@ export async function updateStatus(
   serviceOrderId: string,
   status: StatusOS
 ): Promise<{ ok: boolean; error?: string }> {
-  await requireUserForAction();
+  const actor = await requireUserForAction();
 
   if (!STATUS_VALUES.includes(status)) {
     return { ok: false, error: "Status inválido." };
   }
 
-  await prisma.serviceOrder.update({
+  const os = await prisma.serviceOrder.update({
     where: { id: serviceOrderId },
     data: { status },
+    select: { numero: true },
   });
+
+  await logAudit(
+    actor.id,
+    "ATUALIZAR",
+    "ServiceOrder",
+    serviceOrderId,
+    `Status da OS ${os.numero} alterado para ${status}.`
+  );
 
   revalidatePath(ROUTE);
   revalidatePath(`${ROUTE}/${serviceOrderId}`);

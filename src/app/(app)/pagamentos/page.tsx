@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CreditCard, Plus, Wallet, Clock, CircleDollarSign } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { formatBRL, formatDateBR } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
@@ -31,7 +31,7 @@ export default async function PagamentosPage({
 }: {
   searchParams: SearchParams;
 }) {
-  await requireUser();
+  await requirePageRole(["FINANCEIRO", "ADMINISTRADOR"]);
   const sp = await searchParams;
 
   const q = sp.q?.trim() ?? "";

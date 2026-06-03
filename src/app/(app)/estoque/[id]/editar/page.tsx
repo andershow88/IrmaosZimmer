@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export default async function EditarPecaPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireUser();
+  await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
   const { id } = await params;
 
   const [part, suppliers] = await Promise.all([

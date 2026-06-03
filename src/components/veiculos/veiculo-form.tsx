@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import { Loader2, Search } from "lucide-react";
 import { Card, CardBody, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,8 +11,17 @@ import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { maskPlaca } from "@/lib/masks";
+import type { MarcaFipe, PrecoFipe } from "@/lib/lookups";
 import { createVeiculo, updateVeiculo, type VeiculoActionState } from "@/server/veiculos";
 import { COMBUSTIVEL_OPTIONS } from "@/components/veiculos/constants";
+
+type TipoFipe = "carros" | "motos" | "caminhoes";
+
+const TIPO_FIPE_OPTIONS: { value: TipoFipe; label: string }[] = [
+  { value: "carros", label: "Carros" },
+  { value: "motos", label: "Motos" },
+  { value: "caminhoes", label: "Caminhões" },
+];
 
 export type ClienteOption = {
   id: string;
@@ -76,6 +86,69 @@ export function VeiculoForm({
   const errors = state.fieldErrors ?? {};
 
   const [placa, setPlaca] = useState(initial?.placa ?? "");
+  const [marca, setMarca] = useState(initial?.marca ?? "");
+
+  // Auxílio FIPE: lista de marcas por tipo + consulta de valor por código FIPE.
+  const [fipeTipo, setFipeTipo] = useState<TipoFipe>("carros");
+  const [marcas, setMarcas] = useState<MarcaFipe[]>([]);
+  const [marcasLoading, setMarcasLoading] = useState(false);
+  const [fipeInfo, setFipeInfo] = useState<string | null>(null);
+
+  const [codigoFipe, setCodigoFipe] = useState("");
+  const [precoLoading, setPrecoLoading] = useState(false);
+  const [precos, setPrecos] = useState<PrecoFipe[]>([]);
+  const [precoInfo, setPrecoInfo] = useState<string | null>(null);
+
+  async function carregarMarcas(tipo: TipoFipe) {
+    setFipeInfo(null);
+    setMarcasLoading(true);
+    try {
+      const res = await fetch(
+        `/api/lookups?tipo=fipe&fipe=marcas&veiculo=${tipo}`
+      );
+      const json = (await res.json()) as { data?: MarcaFipe[]; error?: string };
+      if (!res.ok || !json.data) {
+        setFipeInfo(json.error ?? "Não foi possível carregar as marcas.");
+        setMarcas([]);
+        return;
+      }
+      setMarcas(json.data);
+      if (json.data.length === 0) {
+        setFipeInfo("Nenhuma marca retornada pela FIPE.");
+      }
+    } catch {
+      setFipeInfo("Falha ao consultar a tabela FIPE. Tente novamente.");
+      setMarcas([]);
+    } finally {
+      setMarcasLoading(false);
+    }
+  }
+
+  async function consultarValorFipe() {
+    const code = codigoFipe.trim();
+    setPrecoInfo(null);
+    setPrecos([]);
+    if (!code) {
+      setPrecoInfo("Informe o código FIPE (ex.: 001234-5).");
+      return;
+    }
+    setPrecoLoading(true);
+    try {
+      const res = await fetch(
+        `/api/lookups?tipo=fipe&fipe=preco&codigo=${encodeURIComponent(code)}`
+      );
+      const json = (await res.json()) as { data?: PrecoFipe[]; error?: string };
+      if (!res.ok || !json.data || json.data.length === 0) {
+        setPrecoInfo(json.error ?? "Nenhum valor FIPE encontrado.");
+        return;
+      }
+      setPrecos(json.data);
+    } catch {
+      setPrecoInfo("Falha ao consultar o valor FIPE. Tente novamente.");
+    } finally {
+      setPrecoLoading(false);
+    }
+  }
 
   return (
     <form action={formAction}>
@@ -154,7 +227,8 @@ export function VeiculoForm({
               <Input
                 id="marca"
                 name="marca"
-                defaultValue={initial?.marca ?? ""}
+                value={marca}
+                onChange={(e) => setMarca(e.target.value)}
                 placeholder="Ex.: Volkswagen"
               />
               <FieldError message={errors.marca} />
@@ -246,6 +320,120 @@ export function VeiculoForm({
               placeholder="Anotações sobre o veículo..."
             />
             <FieldError message={errors.observacoes} />
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface/40 p-4 space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">
+                Auxílio FIPE
+              </h3>
+              <p className="mt-0.5 text-xs text-muted">
+                Consulte as marcas oficiais e o valor de referência FIPE. As
+                marcas listadas podem ser aplicadas ao campo Marca acima.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="fipeTipo">Tipo de veículo (FIPE)</Label>
+                <div className="flex gap-2">
+                  <Select
+                    id="fipeTipo"
+                    value={fipeTipo}
+                    onChange={(e) => setFipeTipo(e.target.value as TipoFipe)}
+                    className="flex-1"
+                  >
+                    {TIPO_FIPE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => carregarMarcas(fipeTipo)}
+                    disabled={marcasLoading}
+                    className="shrink-0"
+                  >
+                    {marcasLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Buscar marcas
+                  </Button>
+                </div>
+              </div>
+
+              {marcas.length > 0 && (
+                <div>
+                  <Label htmlFor="fipeMarca">Marca FIPE</Label>
+                  <Select
+                    id="fipeMarca"
+                    value={marca}
+                    onChange={(e) => setMarca(e.target.value)}
+                  >
+                    <option value="">Selecione para aplicar à Marca</option>
+                    {marcas.map((m) => (
+                      <option key={m.codigo} value={m.nome}>
+                        {m.nome}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {fipeInfo && <p className="text-xs text-muted">{fipeInfo}</p>}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="codigoFipe">Código FIPE (opcional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="codigoFipe"
+                    value={codigoFipe}
+                    onChange={(e) => setCodigoFipe(e.target.value)}
+                    placeholder="Ex.: 001234-5"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={consultarValorFipe}
+                    disabled={precoLoading}
+                    className="shrink-0"
+                  >
+                    {precoLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Ver valor
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {precoInfo && <p className="text-xs text-muted">{precoInfo}</p>}
+
+            {precos.length > 0 && (
+              <ul className="space-y-1 text-xs text-foreground">
+                {precos.map((p, i) => (
+                  <li
+                    key={`${p.codigoFipe}-${p.ano}-${i}`}
+                    className="rounded-lg border border-border bg-bg-elevated px-3 py-2"
+                  >
+                    <span className="font-semibold">{p.valor}</span>
+                    {" — "}
+                    {[p.marca, p.modelo].filter(Boolean).join(" ")}
+                    {p.ano ? ` (${p.ano}` : ""}
+                    {p.ano && p.combustivel ? ` · ${p.combustivel})` : p.ano ? ")" : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </CardBody>
 

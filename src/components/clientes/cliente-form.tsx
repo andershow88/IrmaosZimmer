@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Save, X } from "lucide-react";
+import { Loader2, Save, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardBody } from "@/components/ui/card";
 import { maskCPFCNPJ, maskTelefone, maskCEP } from "@/lib/masks";
+import type { DadosCNPJ, EnderecoCEP } from "@/lib/lookups";
 import {
   createCliente,
   updateCliente,
@@ -68,6 +69,13 @@ export function ClienteForm({
   const [isPending, startTransition] = useTransition();
   const isEdit = Boolean(initial?.id);
 
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepInfo, setCepInfo] = useState<string | null>(null);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [cnpjInfo, setCnpjInfo] = useState<string | null>(null);
+
+  const isPJ = values.tipoPessoa === "JURIDICA";
+
   function set<K extends keyof ClienteFormValues>(
     key: K,
     value: ClienteFormValues[K]
@@ -79,6 +87,73 @@ export function ClienteForm({
       delete next[key as string];
       return next;
     });
+  }
+
+  async function buscarCep() {
+    const digits = values.cep.replace(/\D/g, "");
+    setCepInfo(null);
+    if (digits.length !== 8) {
+      setCepInfo("Informe um CEP com 8 dígitos.");
+      return;
+    }
+    setCepLoading(true);
+    try {
+      const res = await fetch(`/api/lookups?tipo=cep&cep=${digits}`);
+      const json = (await res.json()) as { data?: EnderecoCEP; error?: string };
+      if (!res.ok || !json.data) {
+        setCepInfo(json.error ?? "CEP não encontrado.");
+        return;
+      }
+      const d = json.data;
+      const enderecoBase = [d.logradouro, d.bairro]
+        .filter((p) => p && p.trim().length > 0)
+        .join(", ");
+      setValues((prev) => ({
+        ...prev,
+        endereco: enderecoBase || prev.endereco,
+        cidade: d.cidade || prev.cidade,
+        estado: d.uf || prev.estado,
+      }));
+      setCepInfo("Endereço preenchido pelo CEP.");
+    } catch {
+      setCepInfo("Falha na consulta do CEP. Tente novamente.");
+    } finally {
+      setCepLoading(false);
+    }
+  }
+
+  async function buscarCnpj() {
+    const digits = values.cpfCnpj.replace(/\D/g, "");
+    setCnpjInfo(null);
+    if (digits.length !== 14) {
+      setCnpjInfo("Informe um CNPJ com 14 dígitos.");
+      return;
+    }
+    setCnpjLoading(true);
+    try {
+      const res = await fetch(`/api/lookups?tipo=cnpj&cnpj=${digits}`);
+      const json = (await res.json()) as { data?: DadosCNPJ; error?: string };
+      if (!res.ok || !json.data) {
+        setCnpjInfo(json.error ?? "CNPJ não encontrado.");
+        return;
+      }
+      const d = json.data;
+      setValues((prev) => ({
+        ...prev,
+        nome: d.nome || prev.nome,
+        email: prev.email || d.email,
+        telefone: prev.telefone || (d.telefone ? maskTelefone(d.telefone) : ""),
+        endereco: d.endereco || prev.endereco,
+        cidade: d.cidade || prev.cidade,
+        estado: d.uf || prev.estado,
+        cep: d.cep ? maskCEP(d.cep) : prev.cep,
+      }));
+      setCnpjInfo("Dados preenchidos pelo CNPJ.");
+    } catch {
+      setCnpjInfo("Falha na consulta do CNPJ. Tente novamente.");
+    } finally {
+      setCnpjLoading(false);
+    }
   }
 
   function handleSubmit(e: FormEvent) {
@@ -158,21 +233,39 @@ export function ClienteForm({
             </div>
 
             <div>
-              <Label htmlFor="cpfCnpj">
-                {values.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"}
-              </Label>
-              <Input
-                id="cpfCnpj"
-                inputMode="numeric"
-                value={values.cpfCnpj}
-                onChange={(e) => set("cpfCnpj", maskCPFCNPJ(e.target.value))}
-                placeholder={
-                  values.tipoPessoa === "FISICA"
-                    ? "000.000.000-00"
-                    : "00.000.000/0000-00"
-                }
-              />
+              <Label htmlFor="cpfCnpj">{isPJ ? "CNPJ" : "CPF"}</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="cpfCnpj"
+                  inputMode="numeric"
+                  value={values.cpfCnpj}
+                  onChange={(e) => set("cpfCnpj", maskCPFCNPJ(e.target.value))}
+                  placeholder={
+                    isPJ ? "00.000.000/0000-00" : "000.000.000-00"
+                  }
+                  className="flex-1"
+                />
+                {isPJ && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={buscarCnpj}
+                    disabled={cnpjLoading}
+                    className="shrink-0"
+                  >
+                    {cnpjLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Buscar CNPJ
+                  </Button>
+                )}
+              </div>
               {errors.cpfCnpj && <FieldError msg={errors.cpfCnpj} />}
+              {isPJ && cnpjInfo && (
+                <p className="mt-1 text-xs text-muted">{cnpjInfo}</p>
+              )}
             </div>
           </div>
         </CardBody>
@@ -232,13 +325,31 @@ export function ClienteForm({
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="cep">CEP</Label>
-              <Input
-                id="cep"
-                inputMode="numeric"
-                value={values.cep}
-                onChange={(e) => set("cep", maskCEP(e.target.value))}
-                placeholder="00000-000"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="cep"
+                  inputMode="numeric"
+                  value={values.cep}
+                  onChange={(e) => set("cep", maskCEP(e.target.value))}
+                  placeholder="00000-000"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={buscarCep}
+                  disabled={cepLoading}
+                  className="shrink-0"
+                >
+                  {cepLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                  Buscar CEP
+                </Button>
+              </div>
+              {cepInfo && <p className="mt-1 text-xs text-muted">{cepInfo}</p>}
             </div>
             <div className="sm:col-span-4">
               <Label htmlFor="cidade">Cidade</Label>

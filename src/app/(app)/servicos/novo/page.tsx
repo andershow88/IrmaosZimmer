@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Wrench } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { ServicoForm, type ServicoFormValues } from "@/components/servicos/servico-form";
@@ -17,7 +17,7 @@ const emptyServico: ServicoFormValues = {
 };
 
 export default async function NovoServicoPage() {
-  await requireUser();
+  await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
 
   return (
     <div className="mx-auto max-w-3xl">

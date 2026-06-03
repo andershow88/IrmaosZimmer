@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, PackagePlus } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requirePageRole } from "@/lib/permissions-server";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { PecaForm, type FornecedorOption } from "@/components/estoque/peca-form"
 export const dynamic = "force-dynamic";
 
 export default async function NovaPecaPage() {
-  await requireUser();
+  await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
 
   const suppliers = await prisma.supplier.findMany({
     select: { id: true, nome: true },

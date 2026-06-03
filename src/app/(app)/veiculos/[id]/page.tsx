@@ -7,6 +7,7 @@ import {
   User,
   ClipboardList,
   ClipboardCheck,
+  Camera,
 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -25,6 +26,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { VeiculoDelete } from "@/components/veiculos/veiculo-delete";
 import { COMBUSTIVEL_LABELS } from "@/components/veiculos/constants";
+import { AnexoUpload } from "@/components/anexos/anexo-upload";
+import { AnexosGaleria } from "@/components/anexos/anexos-galeria";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +104,19 @@ export default async function VeiculoDetalhePage({
   });
 
   if (!veiculo) notFound();
+
+  // Anexos do veículo (Attachment.vehicleId não possui back-relation no schema).
+  const anexos = await prisma.attachment.findMany({
+    where: { vehicleId: veiculo.id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      url: true,
+      nome: true,
+      tipo: true,
+      createdAt: true,
+    },
+  });
 
   const descricao = `${veiculo.marca} ${veiculo.modelo} — ${veiculo.placa}`;
 
@@ -321,6 +337,22 @@ export default async function VeiculoDetalhePage({
               </TBody>
             </Table>
           )}
+        </CardBody>
+      </Card>
+
+      {/* Fotos / Anexos */}
+      <Card className="mt-6">
+        <CardHeader className="flex items-center justify-between gap-3">
+          <CardTitle>
+            <span className="inline-flex items-center gap-2">
+              <Camera className="h-4 w-4 text-accent" />
+              Fotos
+            </span>
+          </CardTitle>
+          <AnexoUpload vehicleId={veiculo.id} label="Enviar foto" />
+        </CardHeader>
+        <CardBody>
+          <AnexosGaleria anexos={anexos} />
         </CardBody>
       </Card>
     </div>

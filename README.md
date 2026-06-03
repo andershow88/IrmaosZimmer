@@ -51,11 +51,22 @@ Server Actions, Prisma/PostgreSQL e autenticação JWT própria. Interface 100% 
   gerado por IA.
 - **Pagamentos** — registro por OS, formas de pagamento, status derivado
   automaticamente (pendente/parcial/pago) e recibo para impressão.
+- **Financeiro** — contas a pagar, contas a receber, caixa (abertura/movimentos/
+  fechamento com saldo calculado) e fluxo de caixa consolidado. Acesso restrito
+  a **Administrador** e **Financeiro**.
+- **Garantias** — garantias vinculadas a OS/peças com alertas de vencimento.
+- **Anexos** — upload real de imagens (JPG/PNG/WEBP/GIF) e PDF (até 10 MB) em
+  OS e veículos, gravados em `public/uploads`.
 - **Relatórios** — receita mensal, status de OS, ranking de serviços,
-  produtividade e orçamentos, com seletor de período.
+  produtividade, orçamentos, **margem** e **comissão**, com seletor de período e
+  **exportação (CSV)**.
+- **Consultas externas (lookups)** — preenchimento automático nos formulários via
+  APIs públicas brasileiras: **CEP** (ViaCEP), **CNPJ** e **FIPE** (BrasilAPI).
+  Tolerantes a falha (sem chave; retornam vazio em erro/timeout).
 - **Assistente IA** — chat com contexto da oficina + ações rápidas.
-- **Configurações** — dados da oficina, gestão de usuários, papéis/permissões e
-  reset de senha (somente administrador).
+- **Configurações** — dados da oficina, gestão de usuários, papéis/permissões,
+  reset de senha (somente administrador) e **auditoria** (log de ações
+  sensíveis, acessível em Configurações › Oficina).
 
 ---
 
@@ -85,9 +96,15 @@ Copie `.env.example` para `.env` e ajuste:
 | `JWT_SECRET`     | sim         | Segredo forte para assinar o cookie de sessão (troque em prod).  |
 | `OPENAI_API_KEY` | não         | Chave da OpenAI. Vazia ⇒ IA em modo *mock*.                      |
 | `OPENAI_MODEL`   | não         | Modelo de IA (padrão `gpt-5.4-mini`).                            |
+| `SMTP_HOST`      | não         | Host SMTP. **Vazio ⇒ e-mail em modo *mock* (apenas log).**       |
+| `SMTP_PORT`      | não         | Porta SMTP (padrão `587`; `465` usa TLS implícito).             |
+| `SMTP_USER`      | não         | Usuário SMTP (autenticação).                                    |
+| `SMTP_PASS`      | não         | Senha SMTP (autenticação).                                      |
+| `SMTP_FROM`      | não         | Remetente padrão dos e-mails.                                  |
 | `NODE_ENV`       | não         | `development` / `production`.                                   |
 
-> Nunca faça commit do `.env` (já está no `.gitignore`).
+> Nunca faça commit do `.env` (já está no `.gitignore`). Os arquivos enviados
+> ficam em `public/uploads`, que também está ignorado pelo Git.
 
 ---
 
@@ -153,12 +170,17 @@ Após `npm run db:seed`, a senha de **todos** os usuários é `zimmer123`:
 
 ## Roadmap
 
-- [ ] Anexos/fotos reais em OS e inspeções (upload + storage).
-- [ ] Geração de PDF server-side para orçamentos, OS e recibos.
+- [x] Anexos/fotos reais em OS e veículos (upload + storage local).
+- [x] Geração de PDF server-side para orçamentos e recibos (com *fallback* HTML).
+- [x] Garantias com alertas de vencimento.
+- [x] Relatórios financeiros (fluxo de caixa, contas a pagar/receber, caixa) e
+      exportação CSV (margem e comissão).
+- [x] Consultas externas (CEP/CNPJ/FIPE) nos formulários.
+- [x] Auditoria de ações sensíveis.
+- [x] Envio de e-mail via SMTP (com *fallback* mock quando não configurado).
+- [ ] Aplicação granular de permissões por papel em **todas** as rotas/ações.
 - [ ] Envio automatizado de mensagens (integração com API oficial do WhatsApp).
-- [ ] Garantias com alertas de vencimento.
-- [ ] Aplicação granular de permissões por papel em todas as rotas/ações.
-- [ ] Relatórios financeiros (fluxo de caixa, contas a receber) e exportação CSV.
+- [ ] Storage durável de anexos (S3/Blob) para múltiplas instâncias.
 - [ ] Notificações no app e lembretes de manutenção preventiva por IA.
 - [ ] Testes de integração das Server Actions e cobertura E2E.
 

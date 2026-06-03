@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { CategoriaServico } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireUserForAction } from "@/lib/auth";
+import { requireRoleForAction } from "@/lib/permissions-server";
+
+const SERVICOS_ROLES = ["ESTOQUE", "ADMINISTRADOR"] as const;
 
 const categoriaValues = Object.values(CategoriaServico) as [
   CategoriaServico,
@@ -81,7 +83,7 @@ export async function createServico(
   _prev: ServicoActionState,
   formData: FormData
 ): Promise<ServicoActionState> {
-  await requireUserForAction();
+  await requireRoleForAction([...SERVICOS_ROLES]);
 
   const result = parseInput(formData);
   if (isErrorState(result)) return result;
@@ -106,7 +108,7 @@ export async function updateServico(
   _prev: ServicoActionState,
   formData: FormData
 ): Promise<ServicoActionState> {
-  await requireUserForAction();
+  await requireRoleForAction([...SERVICOS_ROLES]);
 
   const result = parseInput(formData);
   if (isErrorState(result)) return result;
@@ -129,7 +131,7 @@ export async function updateServico(
 }
 
 export async function toggleAtivo(id: string): Promise<ServicoActionState> {
-  await requireUserForAction();
+  await requireRoleForAction([...SERVICOS_ROLES]);
 
   const servico = await prisma.service.findUnique({
     where: { id },
@@ -149,7 +151,7 @@ export async function toggleAtivo(id: string): Promise<ServicoActionState> {
 }
 
 export async function deleteServico(id: string): Promise<ServicoActionState> {
-  await requireUserForAction();
+  await requireRoleForAction([...SERVICOS_ROLES]);
 
   const usos = await prisma.service.findUnique({
     where: { id },
