@@ -1,82 +1,152 @@
 import {
   LayoutDashboard,
   ClipboardList,
+  Stethoscope,
+  FileCheck2,
+  Wrench,
   CalendarDays,
   CreditCard,
-  Package,
-  Users,
+  TrendingUp,
+  Receipt,
+  BarChart3,
+  CalendarClock,
+  PackageX,
 } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
-import { greeting } from "@/lib/utils";
+import { requireUser } from "@/lib/auth";
+import { greeting, formatBRL, formatDateBR } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
-import { Card, CardBody } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+} from "@/components/ui/card";
+import { FaturamentoChart } from "@/components/dashboard/faturamento-chart";
+import { ProximasEntregasList } from "@/components/dashboard/proximas-entregas-list";
+import { AlertasEstoqueList } from "@/components/dashboard/alertas-estoque-list";
+import {
+  getDashboardStats,
+  getFaturamentoUltimos6Meses,
+  getProximasEntregas,
+  getAlertasEstoqueBaixo,
+} from "@/server/dashboard";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  const firstName = user?.name?.split(" ")[0] ?? "";
+  const user = await requireUser();
+  const firstName = user.name?.split(" ")[0] ?? "";
+
+  const [stats, faturamento, proximasEntregas, alertasEstoque] =
+    await Promise.all([
+      getDashboardStats(),
+      getFaturamentoUltimos6Meses(),
+      getProximasEntregas(),
+      getAlertasEstoqueBaixo(),
+    ]);
+
+  const hoje = formatDateBR(new Date());
 
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description={`${greeting()}${firstName ? `, ${firstName}` : ""}! Visão geral da oficina.`}
+        title="Painel da oficina"
+        description={`${greeting()}${firstName ? `, ${firstName}` : ""}! Visão geral de ${hoje}.`}
         icon={LayoutDashboard}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Indicadores principais */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="OS abertas"
-          value="0"
+          value={stats.osAbertas}
           icon={ClipboardList}
           tone="accent"
-          hint="Nenhuma ordem em andamento"
+          hint="Ordens em andamento"
         />
         <StatCard
-          label="Agendamentos hoje"
-          value="0"
+          label="Aguardando diagnóstico"
+          value={stats.veiculosAguardandoDiagnostico}
+          icon={Stethoscope}
+          tone="warning"
+          hint="Veículos a avaliar"
+        />
+        <StatCard
+          label="Orçamentos p/ aprovar"
+          value={stats.orcamentosAguardandoAprovacao}
+          icon={FileCheck2}
+          tone="info"
+          hint="Enviados ao cliente"
+        />
+        <StatCard
+          label="Em execução"
+          value={stats.servicosEmExecucao}
+          icon={Wrench}
+          tone="accent"
+          hint="Serviços em andamento"
+        />
+        <StatCard
+          label="Agendamentos de hoje"
+          value={stats.agendamentosHoje}
           icon={CalendarDays}
           tone="info"
           hint="Agenda do dia"
         />
         <StatCard
-          label="A receber"
-          value="R$ 0,00"
+          label="Pagamentos pendentes"
+          value={formatBRL(stats.pagamentosPendentesSaldo)}
           icon={CreditCard}
           tone="warning"
-          hint="Pagamentos pendentes"
+          hint={`${stats.pagamentosPendentesCount} a receber`}
         />
         <StatCard
-          label="Faturamento do mês"
-          value="R$ 0,00"
-          icon={CreditCard}
+          label="Receita do mês"
+          value={formatBRL(stats.receitaMes)}
+          icon={TrendingUp}
           tone="success"
-          hint="Mês atual"
+          hint="Pagamentos recebidos"
         />
         <StatCard
-          label="Peças em falta"
-          value="0"
-          icon={Package}
-          tone="danger"
-          hint="Abaixo do estoque mínimo"
-        />
-        <StatCard
-          label="Clientes"
-          value="0"
-          icon={Users}
+          label="Ticket médio"
+          value={formatBRL(stats.ticketMedio)}
+          icon={Receipt}
           tone="accent"
-          hint="Total cadastrado"
+          hint="OS concluídas"
         />
       </div>
 
+      {/* Gráfico + alertas de estoque */}
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-accent" />
+            <CardTitle>Faturamento dos últimos 6 meses</CardTitle>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <FaturamentoChart data={faturamento} />
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex items-center gap-2">
+            <PackageX className="h-4 w-4 text-danger" />
+            <CardTitle>Estoque baixo</CardTitle>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <AlertasEstoqueList itens={alertasEstoque} />
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Próximas entregas */}
       <Card className="mt-6">
-        <CardBody>
-          <p className="text-sm text-muted">
-            Este é um painel de demonstração. Os indicadores e listas serão
-            preenchidos com dados reais nas próximas etapas do projeto.
-          </p>
+        <CardHeader className="flex items-center gap-2">
+          <CalendarClock className="h-4 w-4 text-accent" />
+          <CardTitle>Próximas entregas</CardTitle>
+        </CardHeader>
+        <CardBody className="pt-0">
+          <ProximasEntregasList itens={proximasEntregas} />
         </CardBody>
       </Card>
     </div>

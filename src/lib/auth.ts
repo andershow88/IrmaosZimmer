@@ -3,19 +3,16 @@ import { redirect } from "next/navigation";
 import { jwtVerify, SignJWT } from "jose";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
+import { ROLE_LABELS, type Role } from "@/lib/roles";
+
+// Re-export para compatibilidade com importadores server-side existentes.
+export { ROLE_LABELS, type Role };
 
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "dev-zimmeros-secret-change"
 );
 
 export const COOKIE_NAME = "zimmeros_session";
-
-export type Role =
-  | "ADMINISTRADOR"
-  | "ATENDENTE"
-  | "MECANICO"
-  | "FINANCEIRO"
-  | "ESTOQUE";
 
 /** Forma da sessão guardada no cookie JWT. */
 export type SessionUser = {
@@ -98,12 +95,3 @@ export async function createToken(user: SessionUser): Promise<string> {
     .setExpirationTime("30d")
     .sign(SECRET);
 }
-
-/** Rótulos em pt-BR para cada função. */
-export const ROLE_LABELS: Record<Role, string> = {
-  ADMINISTRADOR: "Administrador",
-  ATENDENTE: "Atendente",
-  MECANICO: "Mecânico",
-  FINANCEIRO: "Financeiro",
-  ESTOQUE: "Estoque",
-};
