@@ -203,7 +203,7 @@ export function OrcamentoActions({ orcamento }: { orcamento: OrcamentoView }) {
           </Button>
         )}
         {orcamento.serviceOrderId && (
-          <Link href={`/ordens/${orcamento.serviceOrderId}`}>
+          <Link href={`/ordens-servico/${orcamento.serviceOrderId}`}>
             <Button type="button" variant="secondary" className="w-full">
               <ArrowRightCircle className="h-4 w-4" />
               Ver OS vinculada

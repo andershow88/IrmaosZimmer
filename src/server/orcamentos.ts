@@ -411,7 +411,7 @@ export async function converterEmOS(quoteId: string): Promise<ActionResult> {
 
   // Evita duplicar: se já houver uma OS vinculada a este orçamento, reaproveita.
   if (quote.serviceOrderId) {
-    redirect(`/ordens/${quote.serviceOrderId}`);
+    redirect(`/ordens-servico/${quote.serviceOrderId}`);
   }
 
   let osId: string;
@@ -466,5 +466,5 @@ export async function converterEmOS(quoteId: string): Promise<ActionResult> {
 
   revalidatePath(`/orcamentos/${quoteId}`);
   revalidatePath("/ordens");
-  redirect(`/ordens/${osId}`);
+  redirect(`/ordens-servico/${osId}`);
 }

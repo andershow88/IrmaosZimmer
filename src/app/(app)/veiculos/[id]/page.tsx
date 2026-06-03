@@ -252,7 +252,7 @@ export default async function VeiculoDetalhePage({
                   <TR key={os.id}>
                     <TD className="font-semibold">
                       <Link
-                        href={`/ordens/${os.id}`}
+                        href={`/ordens-servico/${os.id}`}
                         className="text-foreground hover:text-accent"
                       >
                         {os.numero}
@@ -305,7 +305,7 @@ export default async function VeiculoDetalhePage({
                   <TR key={insp.id}>
                     <TD className="whitespace-nowrap">
                       <Link
-                        href={`/inspecoes/${insp.id}`}
+                        href={`/checklists/${insp.id}`}
                         className="font-medium text-foreground hover:text-accent"
                       >
                         {formatDateBR(insp.data)}
