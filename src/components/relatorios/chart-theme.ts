@@ -4,8 +4,8 @@
  */
 
 export const CHART_COLORS = {
-  accent: "#1B4D89",
-  accentLight: "#3B82C4",
+  accent: "#00a651",
+  accentLight: "#8cc63f",
   success: "#16a34a",
   warning: "#f59e0b",
   danger: "#dc2626",
@@ -15,15 +15,15 @@ export const CHART_COLORS = {
 
 /** Sequência de cores para séries categóricas (pizza, ranking). */
 export const CHART_PALETTE: string[] = [
-  "#1B4D89",
-  "#3B82C4",
+  "#00a651",
+  "#8cc63f",
   "#0ea5e9",
-  "#16a34a",
   "#f59e0b",
   "#dc2626",
   "#8b5cf6",
   "#14b8a6",
   "#ec4899",
+  "#00913f",
   "#64748b",
 ];
 

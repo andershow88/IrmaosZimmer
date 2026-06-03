@@ -163,7 +163,7 @@ export function UsuarioForm({
               type="checkbox"
               checked={ativo}
               onChange={(e) => setAtivo(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-[var(--color-accent,#2563eb)] cursor-pointer"
+              className="h-4 w-4 rounded border-border accent-[var(--color-accent,#00a651)] cursor-pointer"
             />
             <span className="text-sm">
               <span className="font-medium text-foreground">Usuário ativo</span>

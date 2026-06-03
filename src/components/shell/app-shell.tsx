@@ -18,7 +18,6 @@ import {
   BarChart3,
   Sparkles,
   Settings,
-  Wrench,
   Menu,
   X,
   type LucideIcon,
@@ -61,11 +60,8 @@ function isActive(pathname: string, item: NavItem): boolean {
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2.5">
-      <div className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-white shadow-md shadow-accent/20">
-        <Wrench className="h-5 w-5" />
-      </div>
-      <span className="text-base font-bold tracking-tight text-foreground">ZimmerOS AI</span>
+    <Link href="/" className="flex items-center" aria-label="ZimmerOS AI — Irmãos Zimmer">
+      <img src="/logo.png" alt="Mecânica Irmãos Zimmer" className="logo-plate h-9 w-auto" />
     </Link>
   );
 }

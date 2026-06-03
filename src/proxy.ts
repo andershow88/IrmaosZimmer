@@ -16,6 +16,9 @@ const PUBLIC = [
   "/api/auth",
   "/api/health",
   "/favicon",
+  "/icon",
+  "/logo",
+  "/manifest",
 ];
 
 export async function proxy(req: NextRequest) {

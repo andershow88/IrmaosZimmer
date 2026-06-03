@@ -13,10 +13,20 @@ export const metadata: Metadata = {
   description:
     "Sistema de gestão da oficina Irmãos Zimmer: clientes, veículos, ordens de serviço, orçamentos, agenda, estoque e assistente de IA.",
   applicationName: "ZimmerOS AI",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/icon-192.png", sizes: "192x192" }],
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1B4D89",
+  themeColor: "#00a651",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

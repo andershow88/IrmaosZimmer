@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<title>Irmãos Zimmer Favicon IZ</title>
+<defs>
+  <linearGradient id="g" x1="72" y1="64" x2="438" y2="450" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#8cc63f"/>
+    <stop offset="1" stop-color="#00a651"/>
+  </linearGradient>
+</defs>
+<rect x="24" y="24" width="464" height="464" rx="108" fill="url(#g)"/>
+<path d="M87 363 C169 384 286 373 424 337" fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" opacity=".95"/>
+<path d="M108 181 C188 107 314 98 405 174 C348 145 235 129 148 201 Z" fill="#2f2f31" opacity=".95"/>
+<text x="256" y="332" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="184" font-weight="900" fill="#ffffff" letter-spacing="-18">IZ</text>
+</svg>
