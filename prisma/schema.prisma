@@ -1,0 +1,545 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  ADMINISTRADOR
+  ATENDENTE
+  MECANICO
+  FINANCEIRO
+  ESTOQUE
+}
+
+enum TipoPessoa {
+  FISICA
+  JURIDICA
+}
+
+enum Combustivel {
+  GASOLINA
+  ETANOL
+  FLEX
+  DIESEL
+  GNV
+  ELETRICO
+  HIBRIDO
+}
+
+enum CategoriaServico {
+  MECANICA_GERAL
+  ELETRONICA_EMBARCADA
+  SERVICOS_RAPIDOS
+  GEOMETRIA
+  CHAPEACAO
+  AUTOPECAS
+  ACESSORIOS
+  FREIOS
+  SUSPENSAO
+  MOTOR
+  ARREFECIMENTO
+}
+
+enum StatusOS {
+  ABERTA
+  AGUARDANDO_DIAGNOSTICO
+  AGUARDANDO_APROVACAO
+  APROVADA
+  EM_EXECUCAO
+  AGUARDANDO_PECAS
+  CONCLUIDA
+  ENTREGUE
+  CANCELADA
+}
+
+enum PrioridadeOS {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum TipoItem {
+  SERVICO
+  PECA
+}
+
+enum StatusOrcamento {
+  RASCUNHO
+  ENVIADO
+  APROVADO
+  REJEITADO
+  EXPIRADO
+}
+
+enum StatusAgendamento {
+  AGENDADO
+  CONFIRMADO
+  VEICULO_RECEBIDO
+  NAO_COMPARECEU
+  CANCELADO
+  CONCLUIDO
+}
+
+enum StatusItemInspecao {
+  OK
+  ATENCAO
+  CRITICO
+  NAO_VERIFICADO
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PARCIAL
+  PAGO
+  VENCIDO
+  CANCELADO
+}
+
+enum FormaPagamento {
+  PIX
+  DINHEIRO
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  TRANSFERENCIA
+  BOLETO
+  OUTRO
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+  AJUSTE
+}
+
+enum TipoInteracaoIA {
+  RESUMO_OS
+  MENSAGEM_WHATSAPP
+  EXPLICACAO_ORCAMENTO
+  RECOMENDACAO_MANUTENCAO
+  RESUMO_INSPECAO
+  BUSCA
+  OUTRO
+}
+
+// ============================================================
+// USUÁRIOS E AUTENTICAÇÃO
+// ============================================================
+
+model User {
+  id           String  @id @default(cuid())
+  name         String
+  email        String  @unique
+  passwordHash String
+  role         Role    @default(ATENDENTE)
+  ativo        Boolean @default(true)
+  telefone     String?
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  ordensResponsavel ServiceOrder[]  @relation("MecanicoOS")
+  agendamentos      Appointment[]   @relation("MecanicoAgendamento")
+  inspecoes         Inspection[]
+  aiInteractions    AiInteraction[]
+
+  @@index([role])
+  @@index([ativo])
+}
+
+// ============================================================
+// CLIENTES E VEÍCULOS
+// ============================================================
+
+model Customer {
+  id          String     @id @default(cuid())
+  nome        String
+  tipoPessoa  TipoPessoa @default(FISICA)
+  cpfCnpj     String?
+  telefone    String?
+  whatsapp    String?
+  email       String?
+  endereco    String?
+  cidade      String?
+  estado      String?
+  cep         String?
+  observacoes String?    @db.Text
+  lgpdConsent Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  vehicles      Vehicle[]
+  serviceOrders ServiceOrder[]
+  quotes        Quote[]
+  appointments  Appointment[]
+
+  @@index([nome])
+  @@index([cpfCnpj])
+}
+
+model Vehicle {
+  id            String       @id @default(cuid())
+  customerId    String
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  placa         String
+  marca         String
+  modelo        String
+  ano           Int?
+  cor           String?
+  quilometragem Int?
+  chassi        String?
+  renavam       String?
+  combustivel   Combustivel?
+  observacoes   String?      @db.Text
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  serviceOrders ServiceOrder[]
+  quotes        Quote[]
+  appointments  Appointment[]
+  inspections   Inspection[]
+
+  @@index([customerId])
+  @@index([placa])
+}
+
+// ============================================================
+// SERVIÇOS
+// ============================================================
+
+model Service {
+  id               String           @id @default(cuid())
+  nome             String
+  categoria        CategoriaServico
+  descricao        String?          @db.Text
+  precoPadrao      Decimal          @default(0) @db.Decimal(10, 2)
+  tempoEstimadoMin Int?
+  ativo            Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  osItems    ServiceOrderItem[]
+  quoteItems QuoteItem[]
+
+  @@index([categoria])
+  @@index([ativo])
+}
+
+// ============================================================
+// FORNECEDORES E PEÇAS / ESTOQUE
+// ============================================================
+
+model Supplier {
+  id          String   @id @default(cuid())
+  nome        String
+  cnpj        String?
+  contato     String?
+  telefone    String?
+  whatsapp    String?
+  email       String?
+  endereco    String?
+  observacoes String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parts Part[]
+
+  @@index([nome])
+}
+
+model Part {
+  id              String    @id @default(cuid())
+  nome            String
+  codigoInterno   String    @unique
+  categoria       String?
+  supplierId      String?
+  supplier        Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  precoCusto      Decimal   @default(0) @db.Decimal(10, 2)
+  precoVenda      Decimal   @default(0) @db.Decimal(10, 2)
+  quantidade      Int       @default(0)
+  estoqueMinimo   Int       @default(0)
+  localizacao     String?
+  compatibilidade String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  movements  InventoryMovement[]
+  osItems    ServiceOrderItem[]
+  quoteItems QuoteItem[]
+
+  @@index([nome])
+  @@index([supplierId])
+}
+
+// ============================================================
+// ORDENS DE SERVIÇO
+// ============================================================
+
+model ServiceOrder {
+  id               String       @id @default(cuid())
+  numero           String       @unique
+  customerId       String
+  customer         Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  vehicleId        String
+  vehicle          Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  mecanicoId       String?
+  mecanico         User?        @relation("MecanicoOS", fields: [mecanicoId], references: [id], onDelete: SetNull)
+  dataAbertura     DateTime     @default(now())
+  quilometragem    Int?
+  problemaRelatado String?      @db.Text
+  diagnostico      String?      @db.Text
+  status           StatusOS     @default(ABERTA)
+  prioridade       PrioridadeOS @default(NORMAL)
+  previsaoEntrega  DateTime?
+  valorMaoObra     Decimal      @default(0) @db.Decimal(10, 2)
+  valorPecas       Decimal      @default(0) @db.Decimal(10, 2)
+  desconto         Decimal      @default(0) @db.Decimal(10, 2)
+  total            Decimal      @default(0) @db.Decimal(10, 2)
+  obsInternas      String?      @db.Text
+  obsCliente       String?      @db.Text
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  items       ServiceOrderItem[]
+  quotes      Quote[]
+  inspections Inspection[]
+  payments    Payment[]
+  movements   InventoryMovement[]
+  warranties  Warranty[]
+  attachments Attachment[]
+
+  @@index([numero])
+  @@index([status])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([mecanicoId])
+}
+
+model ServiceOrderItem {
+  id             String       @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  tipo           TipoItem
+  serviceId      String?
+  service        Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  partId         String?
+  part           Part?        @relation(fields: [partId], references: [id], onDelete: SetNull)
+  descricao      String
+  quantidade     Int          @default(1)
+  precoUnitario  Decimal      @db.Decimal(10, 2)
+  subtotal       Decimal      @db.Decimal(10, 2)
+
+  @@index([serviceOrderId])
+  @@index([serviceId])
+  @@index([partId])
+}
+
+// ============================================================
+// ORÇAMENTOS
+// ============================================================
+
+model Quote {
+  id             String          @id @default(cuid())
+  numero         String          @unique
+  serviceOrderId String?
+  serviceOrder   ServiceOrder?   @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  customerId     String
+  customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  vehicleId      String
+  vehicle        Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  status         StatusOrcamento @default(RASCUNHO)
+  validade       DateTime?
+  desconto       Decimal         @default(0) @db.Decimal(10, 2)
+  total          Decimal         @default(0) @db.Decimal(10, 2)
+  observacoes    String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  items QuoteItem[]
+
+  @@index([numero])
+  @@index([status])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([serviceOrderId])
+}
+
+model QuoteItem {
+  id            String   @id @default(cuid())
+  quoteId       String
+  quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  tipo          TipoItem
+  serviceId     String?
+  service       Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  partId        String?
+  part          Part?    @relation(fields: [partId], references: [id], onDelete: SetNull)
+  descricao     String
+  quantidade    Int      @default(1)
+  precoUnitario Decimal  @db.Decimal(10, 2)
+  subtotal      Decimal  @db.Decimal(10, 2)
+
+  @@index([quoteId])
+  @@index([serviceId])
+  @@index([partId])
+}
+
+// ============================================================
+// AGENDA
+// ============================================================
+
+model Appointment {
+  id              String            @id @default(cuid())
+  customerId      String
+  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicleId       String?
+  vehicle         Vehicle?          @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  mecanicoId      String?
+  mecanico        User?             @relation("MecanicoAgendamento", fields: [mecanicoId], references: [id], onDelete: SetNull)
+  servicoDesejado String?
+  dataHora        DateTime
+  duracaoMin      Int               @default(60)
+  status          StatusAgendamento @default(AGENDADO)
+  observacoes     String?           @db.Text
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([dataHora])
+  @@index([status])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([mecanicoId])
+}
+
+// ============================================================
+// INSPEÇÕES / CHECKLISTS
+// ============================================================
+
+model Inspection {
+  id             String        @id @default(cuid())
+  serviceOrderId String?
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  vehicleId      String
+  vehicle        Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  mecanicoId     String?
+  mecanico       User?         @relation(fields: [mecanicoId], references: [id], onDelete: SetNull)
+  data           DateTime      @default(now())
+  observacoes    String?       @db.Text
+  resumoIA       String?       @db.Text
+  createdAt      DateTime      @default(now())
+
+  items       InspectionItem[]
+  attachments Attachment[]
+
+  @@index([serviceOrderId])
+  @@index([vehicleId])
+  @@index([mecanicoId])
+}
+
+model InspectionItem {
+  id           String             @id @default(cuid())
+  inspectionId String
+  inspection   Inspection         @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  item         String
+  status       StatusItemInspecao @default(NAO_VERIFICADO)
+  observacao   String?            @db.Text
+
+  @@index([inspectionId])
+}
+
+// ============================================================
+// PAGAMENTOS
+// ============================================================
+
+model Payment {
+  id             String          @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder    @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  valorTotal     Decimal         @db.Decimal(10, 2)
+  valorPago      Decimal         @default(0) @db.Decimal(10, 2)
+  forma          FormaPagamento
+  status         StatusPagamento @default(PENDENTE)
+  dataPagamento  DateTime?
+  observacoes    String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([serviceOrderId])
+  @@index([status])
+}
+
+// ============================================================
+// MOVIMENTAÇÃO DE ESTOQUE
+// ============================================================
+
+model InventoryMovement {
+  id             String           @id @default(cuid())
+  partId         String
+  part           Part             @relation(fields: [partId], references: [id], onDelete: Cascade)
+  tipo           TipoMovimentacao
+  quantidade     Int
+  motivo         String?
+  serviceOrderId String?
+  serviceOrder   ServiceOrder?    @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  createdById    String?
+  createdAt      DateTime         @default(now())
+
+  @@index([partId])
+  @@index([serviceOrderId])
+  @@index([tipo])
+}
+
+// ============================================================
+// GARANTIAS, ANEXOS E IA
+// ============================================================
+
+model Warranty {
+  id             String       @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  descricao      String
+  validadeAte    DateTime?
+  observacoes    String?      @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([serviceOrderId])
+}
+
+model Attachment {
+  id             String        @id @default(cuid())
+  url            String
+  nome           String?
+  tipo           String?
+  serviceOrderId String?
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  vehicleId      String?
+  inspectionId   String?
+  inspection     Inspection?   @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@index([serviceOrderId])
+  @@index([vehicleId])
+  @@index([inspectionId])
+}
+
+model AiInteraction {
+  id        String          @id @default(cuid())
+  userId    String?
+  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tipo      TipoInteracaoIA
+  input     String          @db.Text
+  output    String?         @db.Text
+  model     String?
+  createdAt DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@index([tipo, createdAt])
+}

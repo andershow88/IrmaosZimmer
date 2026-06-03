@@ -1,0 +1,191 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Users,
+  Car,
+  ClipboardList,
+  FileText,
+  CalendarDays,
+  ListChecks,
+  Package,
+  CreditCard,
+  Truck,
+  BarChart3,
+  Sparkles,
+  Settings,
+  Wrench,
+  Menu,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { LogoutButton } from "@/components/shell/logout-button";
+
+type NavItem = { label: string; href: string; icon: LucideIcon; exact?: boolean };
+
+const NAV: NavItem[] = [
+  { label: "Dashboard", href: "/", icon: LayoutDashboard, exact: true },
+  { label: "Clientes", href: "/clientes", icon: Users },
+  { label: "Veículos", href: "/veiculos", icon: Car },
+  { label: "Ordens de Serviço", href: "/ordens-servico", icon: ClipboardList },
+  { label: "Orçamentos", href: "/orcamentos", icon: FileText },
+  { label: "Agenda", href: "/agenda", icon: CalendarDays },
+  { label: "Checklists", href: "/checklists", icon: ListChecks },
+  { label: "Peças & Estoque", href: "/estoque", icon: Package },
+  { label: "Pagamentos", href: "/pagamentos", icon: CreditCard },
+  { label: "Fornecedores", href: "/fornecedores", icon: Truck },
+  { label: "Relatórios", href: "/relatorios", icon: BarChart3 },
+  { label: "Assistente AI", href: "/assistente", icon: Sparkles },
+  { label: "Configurações", href: "/configuracoes", icon: Settings },
+];
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMINISTRADOR: "Administrador",
+  ATENDENTE: "Atendente",
+  MECANICO: "Mecânico",
+  FINANCEIRO: "Financeiro",
+  ESTOQUE: "Estoque",
+};
+
+function isActive(pathname: string, item: NavItem): boolean {
+  if (item.exact) return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(item.href + "/");
+}
+
+function Logo() {
+  return (
+    <Link href="/" className="flex items-center gap-2.5">
+      <div className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-white shadow-md shadow-accent/20">
+        <Wrench className="h-5 w-5" />
+      </div>
+      <span className="text-base font-bold tracking-tight text-foreground">ZimmerOS AI</span>
+    </Link>
+  );
+}
+
+function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
+  return (
+    <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-2 scrollbar-thin">
+      {NAV.map((item) => {
+        const active = isActive(pathname, item);
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+              active
+                ? "bg-accent-soft text-accent"
+                : "text-muted hover:bg-surface hover:text-foreground"
+            )}
+          >
+            <Icon className={cn("h-4.5 w-4.5 shrink-0", active && "stroke-[2.5px]")} />
+            <span className="truncate">{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function Sidebar({ children }: { children?: ReactNode }) {
+  return (
+    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-bg-elevated">
+      <div className="flex h-16 items-center border-b border-border px-5">
+        <Logo />
+      </div>
+      <NavLinks />
+      {children}
+    </aside>
+  );
+}
+
+export function AppShell({
+  children,
+  name,
+  role,
+}: {
+  children: ReactNode;
+  name: string;
+  role: string;
+}) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const firstName = name?.split(" ")[0] ?? "";
+  const roleLabel = ROLE_LABELS[role] ?? role;
+
+  return (
+    <div className="flex min-h-dvh">
+      <Sidebar />
+
+      {/* Drawer mobile */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            onClick={() => setDrawerOpen(false)}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
+          />
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col border-r border-border bg-bg-elevated shadow-xl animate-fade-in">
+            <div className="flex h-16 items-center justify-between border-b border-border px-5">
+              <Logo />
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-xl text-muted hover:bg-surface hover:text-foreground transition cursor-pointer"
+                aria-label="Fechar menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <NavLinks onNavigate={() => setDrawerOpen(false)} />
+          </aside>
+        </div>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-40 flex h-16 items-center gap-2 border-b border-border bg-bg-elevated/80 px-4 backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="grid h-9 w-9 place-items-center rounded-xl text-muted hover:bg-surface hover:text-foreground transition cursor-pointer lg:hidden"
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <div className="lg:hidden">
+            <Logo />
+          </div>
+
+          <div className="flex-1" />
+
+          <div className="hidden sm:flex flex-col items-end leading-tight mr-1">
+            <span className="text-sm font-semibold text-foreground">{firstName}</span>
+            <span className="text-[11px] text-muted">{roleLabel}</span>
+          </div>
+          <div
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-bold text-accent"
+            title={`${name} · ${roleLabel}`}
+          >
+            {firstName.charAt(0).toUpperCase() || "?"}
+          </div>
+
+          <ThemeToggle />
+          <LogoutButton />
+        </header>
+
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">{children}</main>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f4f6f9;
+  --bg-elevated: #ffffff;
+  --surface: #eef1f6;
+  --surface-2: #e2e7ef;
+  --border: #d4dae3;
+  --border-strong: #94a3b8;
+  --foreground: #0f1b2d;
+  --muted: #5b6878;
+  --subtle: #94a3b8;
+  --selection-bg: #1B4D89;
+  --selection-fg: #ffffff;
+  --shadow-card: rgba(0, 0, 0, 0.08);
+  --ring-glow: rgba(27, 77, 137, 0.25);
+
+  --accent: #1B4D89;
+  --accent-2: #13385F;
+  --accent-light: #3B82C4;
+  --accent-soft: rgba(27, 77, 137, 0.1);
+
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --info: #0ea5e9;
+}
+
+[data-theme="dark"] {
+  --bg: #0b1320;
+  --bg-elevated: #131c2b;
+  --surface: #18222f;
+  --surface-2: #212d3d;
+  --border: #2a3647;
+  --border-strong: #3b4a5e;
+  --foreground: #e8edf4;
+  --muted: #93a1b3;
+  --subtle: #64748b;
+  --selection-bg: #3B82C4;
+  --selection-fg: #ffffff;
+  --shadow-card: rgba(0, 0, 0, 0.4);
+  --ring-glow: rgba(59, 130, 196, 0.35);
+
+  --accent: #3B82C4;
+  --accent-2: #1B4D89;
+  --accent-light: #60a5fa;
+  --accent-soft: rgba(59, 130, 196, 0.16);
+
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --info: #0ea5e9;
+}
+
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-light: var(--accent-light);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html, body {
+    background-color: var(--bg);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-sans);
+    background-image:
+      radial-gradient(60rem 40rem at 80% -10%, rgba(27, 77, 137, 0.05), transparent 60%),
+      radial-gradient(50rem 35rem at -10% 10%, rgba(59, 130, 196, 0.04), transparent 55%);
+    background-attachment: fixed;
+    min-height: 100dvh;
+  }
+  [data-theme="dark"] body {
+    background-image:
+      radial-gradient(60rem 40rem at 80% -10%, rgba(59, 130, 196, 0.08), transparent 60%),
+      radial-gradient(50rem 35rem at -10% 10%, rgba(27, 77, 137, 0.06), transparent 55%);
+  }
+  ::selection {
+    background: var(--selection-bg);
+    color: var(--selection-fg);
+  }
+  input, textarea, select {
+    color-scheme: light dark;
+  }
+}
+
+@layer components {
+  .glass {
+    background: color-mix(in oklab, var(--bg-elevated) 90%, transparent);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+  .prose-zimmer {
+    color: var(--foreground);
+    line-height: 1.7;
+  }
+  .prose-zimmer h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-zimmer h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.375rem;
+  }
+  .prose-zimmer p { margin-bottom: 0.75rem; }
+  .prose-zimmer ul, .prose-zimmer ol { margin-left: 1.25rem; margin-bottom: 0.75rem; }
+  .prose-zimmer li { margin-bottom: 0.25rem; }
+  .prose-zimmer code {
+    background: var(--surface);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.375rem;
+    font-size: 0.85em;
+  }
+  .prose-zimmer strong { color: var(--foreground); font-weight: 600; }
+}
+
+/* ============================================================
+   MARKDOWN — formatação consistente para todas as respostas de IA
+   ============================================================ */
+.markdown > *:first-child { margin-top: 0 !important; }
+.markdown > *:last-child  { margin-bottom: 0 !important; }
+
+.markdown p {
+  margin: 0 0 0.625rem;
+  line-height: 1.6;
+}
+.markdown h1, .markdown h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.875rem 0 0.5rem;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+.markdown h3, .markdown h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.375rem;
+  color: var(--foreground);
+}
+.markdown ul, .markdown ol {
+  margin: 0 0 0.625rem;
+  padding-left: 1.5rem;
+}
+.markdown ul { list-style: disc; }
+.markdown ol { list-style: decimal; }
+.markdown li {
+  margin-bottom: 0.25rem;
+  padding-left: 0.125rem;
+  line-height: 1.55;
+}
+.markdown li::marker { color: var(--muted); }
+.markdown ol > li::marker { font-weight: 600; color: var(--accent); }
+.markdown li > p { margin: 0 0 0.25rem; }
+.markdown li > ul, .markdown li > ol {
+  margin: 0.25rem 0 0.375rem;
+}
+.markdown strong { font-weight: 700; color: var(--foreground); }
+.markdown em     { font-style: italic; }
+.markdown code {
+  background: color-mix(in oklab, var(--foreground) 8%, transparent);
+  color: var(--accent);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  font-size: 0.85em;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+.markdown pre {
+  background: color-mix(in oklab, var(--foreground) 6%, transparent);
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  border-radius: 0.625rem;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  margin: 0 0 0.625rem;
+}
+.markdown pre code {
+  background: transparent;
+  color: var(--foreground);
+  padding: 0;
+  border-radius: 0;
+}
+.markdown blockquote {
+  border-left: 3px solid color-mix(in oklab, var(--accent) 60%, transparent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  padding: 0.5rem 0.875rem;
+  margin: 0 0 0.625rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: var(--foreground);
+}
+.markdown blockquote p:last-child { margin-bottom: 0; }
+.markdown a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.markdown a:hover { opacity: 0.8; }
+.markdown hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.875rem 0;
+}
+.markdown table {
+  border-collapse: collapse;
+  margin: 0 0 0.625rem;
+  width: 100%;
+  font-size: 0.875rem;
+}
+.markdown th, .markdown td {
+  border: 1px solid var(--border);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+}
+.markdown th {
+  background: var(--surface);
+  font-weight: 600;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.3s ease-out both; }
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.animate-pulse-soft { animation: pulse-soft 1.6s ease-in-out infinite; }
