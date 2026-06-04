@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Em Railway usamos `next start` (Nixpacks), então não precisamos de "standalone".
   serverExternalPackages: ["bcryptjs"],
   turbopack: {
     // Suprime o aviso de "multiple lockfiles" (pode existir um

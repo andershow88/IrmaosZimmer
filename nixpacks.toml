@@ -8,4 +8,5 @@ cmds = ["npm ci --include=dev"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm start"
+# Sincroniza o schema no banco (Railway Postgres) e sobe o servidor na porta $PORT.
+cmd = "npx prisma db push && npm run start"
