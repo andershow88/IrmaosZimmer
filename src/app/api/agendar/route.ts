@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
+import { combinarDataHoraSP, validarSlot } from "@/server/agenda-disponibilidade";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +33,12 @@ const agendarSchema = z.object({
   modelo: z.string().trim().optional().or(z.literal("")),
   placa: z.string().trim().optional().or(z.literal("")),
   servicoDesejado: z.string().trim().optional().or(z.literal("")),
-  dataHora: z
-    .string({ required_error: "Escolha a data e a hora desejadas." })
-    .min(1, "Escolha a data e a hora desejadas."),
+  data: z
+    .string({ required_error: "Escolha a data desejada." })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Escolha uma data válida."),
+  hora: z
+    .string({ required_error: "Escolha um horário disponível." })
+    .regex(/^\d{2}:\d{2}$/, "Escolha um horário disponível."),
   mensagem: z.string().trim().max(2000, "Mensagem muito longa.").optional().or(z.literal("")),
   consentimento: z.literal(true, {
     errorMap: () => ({ message: "É necessário aceitar o uso dos seus dados (LGPD)." }),
@@ -100,12 +104,26 @@ export async function POST(req: Request) {
     return Response.json({ ok: true });
   }
 
-  // Valida a data/hora (datetime-local) antes de tocar no banco.
-  const dataHora = new Date(data.dataHora);
-  if (Number.isNaN(dataHora.getTime())) {
+  // Monta o instante (em America/Sao_Paulo) a partir de data + hora escolhidas.
+  const dataHora = combinarDataHoraSP(data.data, data.hora);
+  if (!dataHora) {
     return Response.json(
-      { ok: false, error: "Data/hora inválida.", fieldErrors: { dataHora: "Data/hora inválida." } },
+      { ok: false, error: "Data/hora inválida.", fieldErrors: { hora: "Data/hora inválida." } },
       { status: 400 }
+    );
+  }
+
+  // Revalida o slot no servidor (anti-corrida / anti-overbooking) ANTES de gravar:
+  // o horário pode ter sido preenchido ou ficar fora das regras desde a consulta.
+  const slot = await validarSlot(dataHora);
+  if (!slot.ok) {
+    return Response.json(
+      {
+        ok: false,
+        error: slot.motivo ?? "Esse horário acabou de ser preenchido, escolha outro.",
+        fieldErrors: { hora: slot.motivo ?? "Esse horário acabou de ser preenchido, escolha outro." },
+      },
+      { status: 409 }
     );
   }
 

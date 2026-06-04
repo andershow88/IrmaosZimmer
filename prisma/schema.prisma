@@ -462,6 +462,51 @@ model Appointment {
 }
 
 // ============================================================
+// PARAMETRIZAÇÃO DA AGENDA (CONFIG / EXPEDIENTE / BLOQUEIOS)
+// ============================================================
+
+/// Configuração singleton da agenda (1 linha). Controla granularidade dos
+/// slots, capacidade simultânea por horário e janelas de antecedência.
+model AgendaConfig {
+  id                  String   @id @default(cuid())
+  /// Duração de cada slot em minutos (granularidade da grade de horários).
+  slotMinutos         Int      @default(30)
+  /// Quantos agendamentos simultâneos são permitidos por horário (capacidade).
+  capacidadePorSlot   Int      @default(2)
+  /// Antecedência mínima (em horas) para que um horário possa ser agendado.
+  antecedenciaMinHoras Int     @default(2)
+  /// Janela máxima (em dias) para agendamento no futuro.
+  maxDiasAntecedencia Int      @default(30)
+  updatedAt           DateTime @updatedAt
+}
+
+/// Expediente por dia da semana (0=Domingo .. 6=Sábado). Define se a oficina
+/// abre, o horário de funcionamento e uma eventual pausa de almoço.
+model HorarioExpediente {
+  id          String  @id @default(cuid())
+  /// 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb.
+  diaSemana   Int     @unique
+  aberto      Boolean @default(true)
+  /// Horário de abertura no formato "HH:MM" (24h).
+  abre        String  @default("08:00")
+  /// Horário de fechamento no formato "HH:MM" (24h).
+  fecha       String  @default("18:00")
+  /// Início da pausa (almoço) "HH:MM" — opcional.
+  pausaInicio String?
+  /// Fim da pausa (almoço) "HH:MM" — opcional.
+  pausaFim    String?
+}
+
+/// Dias bloqueados (feriados, férias) em que não há agendamentos.
+model DiaBloqueado {
+  id        String   @id @default(cuid())
+  /// Data bloqueada (somente data, sem hora).
+  data      DateTime @unique @db.Date
+  motivo    String?
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
 // INSPEÇÕES / CHECKLISTS
 // ============================================================
 

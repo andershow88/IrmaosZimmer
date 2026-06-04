@@ -1,25 +1,28 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Users, ShieldCheck, Building2 } from "lucide-react";
+import { Users, ShieldCheck, Building2, CalendarCog } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TabKey = "usuarios" | "permissoes" | "oficina";
+type TabKey = "usuarios" | "permissoes" | "oficina" | "agenda";
 
 const TABS: { key: TabKey; label: string; icon: typeof Users }[] = [
   { key: "usuarios", label: "Usuários", icon: Users },
   { key: "permissoes", label: "Permissões", icon: ShieldCheck },
   { key: "oficina", label: "Oficina", icon: Building2 },
+  { key: "agenda", label: "Agenda", icon: CalendarCog },
 ];
 
 export function ConfiguracoesTabs({
   usuarios,
   permissoes,
   oficina,
+  agenda,
 }: {
   usuarios: ReactNode;
   permissoes: ReactNode;
   oficina: ReactNode;
+  agenda: ReactNode;
 }) {
   const [active, setActive] = useState<TabKey>("usuarios");
 
@@ -27,6 +30,7 @@ export function ConfiguracoesTabs({
     usuarios,
     permissoes,
     oficina,
+    agenda,
   };
 
   return (

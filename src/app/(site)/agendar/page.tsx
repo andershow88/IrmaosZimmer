@@ -1,12 +1,35 @@
 import type { Metadata } from "next";
 import { CalendarCheck, Clock, ShieldCheck } from "lucide-react";
 import { AgendarForm } from "@/components/site/agendar-form";
+import { getConfigAgenda } from "@/server/agenda-disponibilidade";
 
 export const metadata: Metadata = {
   title: "Agendar horário",
   description:
     "Solicite o agendamento do seu atendimento na oficina Irmãos Zimmer. Preencha o formulário e a nossa equipe entra em contato para confirmar.",
 };
+
+export const dynamic = "force-dynamic";
+
+const TZ = "America/Sao_Paulo";
+
+/** "YYYY-MM-DD" de hoje no fuso de São Paulo. */
+function hojeISOEmSP(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/** Soma `dias` a uma data "YYYY-MM-DD" e devolve "YYYY-MM-DD" (cálculo em UTC). */
+function somarDiasISO(dataISO: string, dias: number): string {
+  const [a, m, d] = dataISO.split("-").map(Number);
+  const dt = new Date(Date.UTC(a!, m! - 1, d!));
+  dt.setUTCDate(dt.getUTCDate() + dias);
+  return dt.toISOString().slice(0, 10);
+}
 
 const VANTAGENS = [
   {
@@ -26,7 +49,16 @@ const VANTAGENS = [
   },
 ];
 
-export default function AgendarPage() {
+export default async function AgendarPage() {
+  // Limites de data para o seletor (calculados no servidor, em America/Sao_Paulo).
+  // Antecedência mínima em horas vira pelo menos "hoje"; se a oficina exigir mais
+  // de um dia de antecedência, o mínimo avança proporcionalmente.
+  const { config } = await getConfigAgenda();
+  const hoje = hojeISOEmSP();
+  const diasAntecedencia = Math.floor(config.antecedenciaMinHoras / 24);
+  const minData = somarDiasISO(hoje, diasAntecedencia);
+  const maxData = somarDiasISO(hoje, config.maxDiasAntecedencia);
+
   return (
     <div className="bg-bg">
       {/* Cabeçalho */}
@@ -51,7 +83,7 @@ export default function AgendarPage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
           {/* Formulário */}
           <div>
-            <AgendarForm />
+            <AgendarForm minData={minData} maxData={maxData} />
           </div>
 
           {/* Coluna lateral informativa */}

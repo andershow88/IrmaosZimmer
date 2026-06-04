@@ -48,6 +48,61 @@ O sistema tem duas faces na mesma aplicação:
 
 ---
 
+## Agenda & Calendário
+
+A agenda usa uma **engine única de disponibilidade**
+(`src/server/agenda-disponibilidade.ts`) compartilhada pelo painel interno e pelo
+agendamento público. Toda a lógica de data/hora roda em **America/Sao_Paulo**
+(o servidor pode estar em UTC sem causar erro de fuso).
+
+### Visão de calendário interna (`/painel/agenda`)
+
+- Alterna entre **Calendário** (grade visual) e **Lista** (cartões agrupados por dia).
+- No calendário, alterna **Semana** (Seg–Dom) e **Dia**, com navegação
+  *anterior / Hoje / próximo* — tudo via querystring, preservando os filtros.
+- A grade só exibe os **dias de expediente** do período; a faixa de horários é
+  derivada da menor abertura e maior fechamento dos dias abertos, na
+  granularidade do *slot* configurado. Cada agendamento vira um bloco posicionado
+  pelo horário/duração, colorido por status, clicável para abrir o detalhe.
+- Filtros por **status** e por **mecânico**.
+
+### Parâmetros configuráveis (Configurações → aba **Agenda**)
+
+Restritos a **ADMINISTRADOR** (`src/server/agenda-config.ts`):
+
+| Parâmetro                | Descrição                                                        |
+| ------------------------ | ---------------------------------------------------------------- |
+| **Duração do slot**      | Granularidade da grade de horários (minutos por *slot*).         |
+| **Capacidade por slot**  | Quantos agendamentos simultâneos cabem no mesmo horário (≈ boxes).|
+| **Antecedência mínima**  | Horas mínimas entre *agora* e o horário agendado.                |
+| **Janela máxima**        | Até quantos dias à frente é possível agendar.                    |
+| **Expediente por dia**   | Abertura/fechamento e pausa de almoço para cada dia da semana.   |
+| **Dias bloqueados**      | Feriados/férias em que não há agendamentos.                      |
+
+### Engine de disponibilidade (fonte única)
+
+- `getSlotsDisponiveis(data)` — lista os horários do dia com
+  `{ hora, disponivel, vagasRestantes }`. Um horário fica **indisponível** se: o
+  dia está fechado ou bloqueado; cai dentro da pausa; está fora das janelas de
+  antecedência mínima / máxima; ou já atingiu a capacidade.
+- `validarSlot(dataHora)` — revalida o horário **no momento da gravação**
+  (anti-corrida / anti-*overbooking*): mesmo conjunto de regras + recontagem de
+  capacidade naquele instante exato.
+
+### Agendamento público só com horários livres
+
+- O formulário em **`/agendar`** consulta **`GET /api/agendar/slots?data=…`** e
+  mostra **apenas os horários com vaga** (chips). As datas selecionáveis respeitam
+  a antecedência mínima e a janela máxima.
+- Ao enviar, o **`POST /api/agendar`** chama `validarSlot` antes de gravar; se o
+  horário acabou de lotar, retorna **409** e o formulário recarrega a grade.
+- A contagem de capacidade ignora agendamentos `CANCELADO` e `NAO_COMPARECEU`.
+
+Ambos os endpoints públicos (`/api/agendar` e `/api/agendar/slots`) são liberados
+sem sessão pelo proxy (`src/proxy.ts`).
+
+---
+
 ## Tech Stack
 
 | Camada              | Tecnologia                                              |

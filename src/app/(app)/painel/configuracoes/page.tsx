@@ -10,6 +10,7 @@ import {
 } from "@/components/configuracoes/usuarios-lista";
 import { PermissoesSecao } from "@/components/configuracoes/permissoes-sec";
 import { OficinaSecao } from "@/components/configuracoes/oficina-sec";
+import { AgendaSecao } from "@/components/configuracoes/agenda-sec";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export default async function ConfiguracoesPage() {
         }
         permissoes={<PermissoesSecao />}
         oficina={<OficinaSecao />}
+        agenda={<AgendaSecao />}
       />
     </div>
   );

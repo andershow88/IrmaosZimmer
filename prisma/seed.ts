@@ -35,6 +35,13 @@ function nascimento(idade: number, mes: number, dia: number): Date {
 /** Mês atual (1-12) — para garantir aniversariantes no mês corrente do seed. */
 const MES_ATUAL = new Date().getMonth() + 1;
 
+/** Data (somente dia, à meia-noite UTC) daqui a N dias — para DiaBloqueado (@db.Date). */
+function dataApenas(diasNoFuturo: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() + diasNoFuturo);
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+}
+
 // ---------- Execução ----------
 
 async function main() {
@@ -69,6 +76,9 @@ async function main() {
   await prisma.inspectionItem.deleteMany();
   await prisma.inspection.deleteMany();
   await prisma.appointment.deleteMany();
+  await prisma.diaBloqueado.deleteMany();
+  await prisma.horarioExpediente.deleteMany();
+  await prisma.agendaConfig.deleteMany();
   await prisma.quoteItem.deleteMany();
   await prisma.quote.deleteMany();
   await prisma.serviceOrderItem.deleteMany();
@@ -959,6 +969,52 @@ async function main() {
   }
 
   // ---------------------------------------------------------
+  // PARAMETRIZAÇÃO DA AGENDA (config / expediente / bloqueios)
+  // ---------------------------------------------------------
+  console.log("⚙️ Criando parametrização da agenda…");
+
+  // Capacidade por slot = nº de boxes ativos (capacidade física da oficina).
+  const boxesAtivos = await prisma.box.count({ where: { ativo: true } });
+
+  await prisma.agendaConfig.create({
+    data: {
+      slotMinutos: 30,
+      capacidadePorSlot: Math.max(1, boxesAtivos), // ex.: 3 boxes ativos
+      antecedenciaMinHoras: 2,
+      maxDiasAntecedencia: 30,
+    },
+  });
+
+  // Expediente dos 7 dias: Seg-Sex 08:00-18:00 (pausa 12:00-13:00),
+  // Sáb 08:00-12:00 (sem pausa), Dom fechado.
+  const expedienteSeed: Array<{
+    diaSemana: number;
+    aberto: boolean;
+    abre: string;
+    fecha: string;
+    pausaInicio: string | null;
+    pausaFim: string | null;
+  }> = [
+    { diaSemana: 0, aberto: false, abre: "08:00", fecha: "18:00", pausaInicio: null, pausaFim: null }, // Dom
+    { diaSemana: 1, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" }, // Seg
+    { diaSemana: 2, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" }, // Ter
+    { diaSemana: 3, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" }, // Qua
+    { diaSemana: 4, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" }, // Qui
+    { diaSemana: 5, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" }, // Sex
+    { diaSemana: 6, aberto: true, abre: "08:00", fecha: "12:00", pausaInicio: null, pausaFim: null }, // Sáb
+  ];
+
+  await prisma.horarioExpediente.createMany({ data: expedienteSeed });
+
+  // Dias bloqueados de exemplo (feriado/férias próximos).
+  await prisma.diaBloqueado.createMany({
+    data: [
+      { data: dataApenas(7), motivo: "Feriado municipal" },
+      { data: dataApenas(8), motivo: "Recesso (emenda de feriado)" },
+    ],
+  });
+
+  // ---------------------------------------------------------
   // AGENDAMENTOS
   // ---------------------------------------------------------
   console.log("📅 Criando agendamentos…");
@@ -1421,6 +1477,8 @@ async function main() {
     ordens: await prisma.serviceOrder.count(),
     orcamentos: await prisma.quote.count(),
     agendamentos: await prisma.appointment.count(),
+    expediente: await prisma.horarioExpediente.count(),
+    diasBloqueados: await prisma.diaBloqueado.count(),
     inspecoes: await prisma.inspection.count(),
     pagamentos: await prisma.payment.count(),
     boxes: await prisma.box.count(),
