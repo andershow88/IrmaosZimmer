@@ -78,7 +78,7 @@ export default function HomePage() {
     <>
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-accent via-accent to-accent-light" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-accent-deep via-accent-2 to-accent-2" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(40rem_30rem_at_85%_-10%,rgba(255,255,255,0.18),transparent_60%)]" />
 
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
@@ -185,7 +185,7 @@ export default function HomePage() {
                 key={item.titulo}
                 className="rounded-2xl border border-border bg-bg-elevated p-7 text-center shadow-sm"
               >
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent-light text-white shadow-md shadow-accent/20">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-deep to-accent-2 text-white shadow-md shadow-accent/20">
                   <item.icon className="h-6 w-6" />
                 </div>
                 <h3 className="mt-5 text-lg font-semibold text-foreground">
@@ -235,7 +235,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative flex min-h-[14rem] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-accent to-accent-light p-8 text-center">
+            <div className="relative flex min-h-[14rem] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-accent-deep to-accent-2 p-8 text-center">
               <div className="absolute inset-0 bg-[radial-gradient(20rem_15rem_at_20%_120%,rgba(255,255,255,0.2),transparent_60%)]" />
               <div className="relative text-white">
                 <MapPin className="mx-auto h-9 w-9" />

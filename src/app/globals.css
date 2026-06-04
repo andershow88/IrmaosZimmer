@@ -18,6 +18,7 @@
   --accent: #00a651;
   --accent-2: #00913f;
   --accent-light: #8cc63f;
+  --accent-deep: #0a5e37;
   --accent-soft: rgba(0, 166, 81, 0.1);
 
   --success: #16a34a;
@@ -44,6 +45,7 @@
   --accent: #2ec46b;
   --accent-2: #00a651;
   --accent-light: #8cc63f;
+  --accent-deep: #0a6b3f;
   --accent-soft: rgba(46, 196, 107, 0.16);
 
   --success: #16a34a;
@@ -65,6 +67,7 @@
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-accent-light: var(--accent-light);
+  --color-accent-deep: var(--accent-deep);
   --color-accent-soft: var(--accent-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);

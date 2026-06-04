@@ -230,7 +230,7 @@ export default async function ContatoPage() {
           </div>
 
           {/* CTA Agendar */}
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-accent to-accent-light p-6 text-white shadow-md sm:p-8">
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-accent-deep to-accent-2 p-6 text-white shadow-md sm:p-8">
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
                 <CalendarCheck className="h-3.5 w-3.5" />

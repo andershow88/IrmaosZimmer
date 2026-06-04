@@ -19,7 +19,7 @@ export default function AcessoriosPage() {
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border/70">
         <div
-          className="absolute inset-0 -z-10 bg-gradient-to-br from-accent via-accent-2 to-accent-light opacity-90"
+          className="absolute inset-0 -z-10 bg-gradient-to-br from-accent-deep via-accent-2 to-accent-2 opacity-90"
           aria-hidden="true"
         />
         <div
@@ -113,7 +113,7 @@ export default function AcessoriosPage() {
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <Card className="relative overflow-hidden border-0 p-8 sm:p-12">
           <div
-            className="absolute inset-0 -z-10 bg-gradient-to-br from-accent via-accent-2 to-accent-light"
+            className="absolute inset-0 -z-10 bg-gradient-to-br from-accent-deep via-accent-2 to-accent-2"
             aria-hidden="true"
           />
           <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">

@@ -76,7 +76,7 @@ export default function SobrePage() {
     <>
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-accent via-accent to-accent-light" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-accent-deep via-accent-2 to-accent-2" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(40rem_30rem_at_85%_-10%,rgba(255,255,255,0.18),transparent_60%)]" />
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
@@ -114,7 +114,7 @@ export default function SobrePage() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-border bg-gradient-to-br from-accent to-accent-light p-8 text-center text-white shadow-md shadow-accent/20">
+          <div className="rounded-3xl border border-border bg-gradient-to-br from-accent-deep to-accent-2 p-8 text-center text-white shadow-md shadow-accent/20">
             <p className="text-5xl font-extrabold leading-none">+35</p>
             <p className="mt-2 text-sm font-medium uppercase tracking-wide text-white/90">
               anos de tradição
@@ -196,7 +196,7 @@ export default function SobrePage() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent to-accent-light p-10 text-center text-white shadow-md shadow-accent/20">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent-deep to-accent-2 p-10 text-center text-white shadow-md shadow-accent/20">
           <div className="absolute inset-0 bg-[radial-gradient(30rem_20rem_at_80%_120%,rgba(255,255,255,0.18),transparent_60%)]" />
           <div className="relative">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">

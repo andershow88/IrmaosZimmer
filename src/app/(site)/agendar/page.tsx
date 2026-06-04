@@ -30,7 +30,7 @@ export default function AgendarPage() {
   return (
     <div className="bg-bg">
       {/* Cabeçalho */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-accent to-accent-light">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-accent-deep to-accent-2">
         <div className="absolute inset-0 bg-[radial-gradient(40rem_25rem_at_80%_-10%,rgba(255,255,255,0.18),transparent_60%)]" />
         <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white">
