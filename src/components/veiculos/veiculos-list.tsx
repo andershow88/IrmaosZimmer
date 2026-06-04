@@ -86,14 +86,14 @@ export function VeiculosList({ veiculos }: { veiculos: VeiculoListItem[] }) {
               <TR key={v.id} className="cursor-pointer">
                 <TD className="font-semibold">
                   <Link
-                    href={`/veiculos/${v.id}`}
+                    href={`/painel/veiculos/${v.id}`}
                     className="font-mono tracking-wide text-foreground hover:text-accent"
                   >
                     {v.placa}
                   </Link>
                 </TD>
                 <TD>
-                  <Link href={`/veiculos/${v.id}`} className="block">
+                  <Link href={`/painel/veiculos/${v.id}`} className="block">
                     <span className="font-medium text-foreground">
                       {v.marca} {v.modelo}
                     </span>

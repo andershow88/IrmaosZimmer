@@ -73,7 +73,7 @@ export function UsuarioForm({
         setErro(res.error);
         return;
       }
-      router.push("/configuracoes");
+      router.push("/painel/configuracoes");
       router.refresh();
     });
   }

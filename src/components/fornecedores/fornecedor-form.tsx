@@ -245,7 +245,7 @@ export function FornecedorForm({
       </Card>
 
       <div className="flex items-center justify-end gap-2">
-        <Link href="/fornecedores" className={buttonVariants({ variant: "outline" })}>
+        <Link href="/painel/fornecedores" className={buttonVariants({ variant: "outline" })}>
           <Building2 className="h-4 w-4" />
           Cancelar
         </Link>

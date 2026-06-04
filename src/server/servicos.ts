@@ -99,7 +99,7 @@ export async function createServico(
     },
   });
 
-  revalidatePath("/servicos");
+  revalidatePath("/painel/servicos");
   return { ok: true, message: "Serviço cadastrado com sucesso." };
 }
 
@@ -125,8 +125,8 @@ export async function updateServico(
     },
   });
 
-  revalidatePath("/servicos");
-  revalidatePath(`/servicos/${id}/editar`);
+  revalidatePath("/painel/servicos");
+  revalidatePath(`/painel/servicos/${id}/editar`);
   return { ok: true, message: "Serviço atualizado com sucesso." };
 }
 
@@ -146,7 +146,7 @@ export async function toggleAtivo(id: string): Promise<ServicoActionState> {
     data: { ativo: !servico.ativo },
   });
 
-  revalidatePath("/servicos");
+  revalidatePath("/painel/servicos");
   return { ok: true, message: servico.ativo ? "Serviço desativado." : "Serviço ativado." };
 }
 
@@ -174,6 +174,6 @@ export async function deleteServico(id: string): Promise<ServicoActionState> {
 
   await prisma.service.delete({ where: { id } });
 
-  revalidatePath("/servicos");
+  revalidatePath("/painel/servicos");
   return { ok: true, message: "Serviço excluído com sucesso." };
 }

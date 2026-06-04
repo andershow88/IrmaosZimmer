@@ -143,7 +143,7 @@ export function UsuariosLista({
             </Select>
           </div>
         </div>
-        <Link href="/configuracoes/usuarios/novo">
+        <Link href="/painel/configuracoes/usuarios/novo">
           <Button>
             <Plus className="h-4 w-4" />
             Novo usuário
@@ -168,7 +168,7 @@ export function UsuariosLista({
           }
           action={
             usuarios.length === 0 ? (
-              <Link href="/configuracoes/usuarios/novo">
+              <Link href="/painel/configuracoes/usuarios/novo">
                 <Button size="sm">
                   <Plus className="h-4 w-4" />
                   Novo usuário
@@ -214,7 +214,7 @@ export function UsuariosLista({
                 </TD>
                 <TD>
                   <div className="flex items-center justify-end gap-1">
-                    <Link href={`/configuracoes/usuarios/${u.id}/editar`}>
+                    <Link href={`/painel/configuracoes/usuarios/${u.id}/editar`}>
                       <Button variant="ghost" size="icon" aria-label="Editar usuário">
                         <Pencil className="h-4 w-4" />
                       </Button>

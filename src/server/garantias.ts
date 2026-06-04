@@ -93,7 +93,7 @@ export async function createGarantia(
     `Garantia para OS ${data.serviceOrderId}`
   );
 
-  revalidatePath(`/ordens-servico/${data.serviceOrderId}`);
+  revalidatePath(`/painel/ordens-servico/${data.serviceOrderId}`);
   return { ok: true, id: garantia.id };
 }
 
@@ -117,6 +117,6 @@ export async function deleteGarantia(id: string): Promise<ActionResult> {
 
   await logAudit(user.id, "EXCLUIR", "Warranty", id, null);
 
-  revalidatePath(`/ordens-servico/${garantia.serviceOrderId}`);
+  revalidatePath(`/painel/ordens-servico/${garantia.serviceOrderId}`);
   return { ok: true, id };
 }

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { requireUserForAction } from "@/lib/auth";
 import type { StatusAgendamento } from "@prisma/client";
 
-const ROUTE = "/agenda";
+const ROUTE = "/painel/agenda";
 
 // ---------------------------------------------------------------------------
 // Validação

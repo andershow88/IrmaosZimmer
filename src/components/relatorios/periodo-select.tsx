@@ -20,7 +20,7 @@ export function PeriodoSelect({ valor }: { valor: number }) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("meses", e.target.value);
     startTransition(() => {
-      router.push(`/relatorios?${params.toString()}`);
+      router.push(`/painel/relatorios?${params.toString()}`);
     });
   }
 

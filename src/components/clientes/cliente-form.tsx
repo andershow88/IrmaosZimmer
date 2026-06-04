@@ -182,7 +182,7 @@ export function ClienteForm({
         : await createCliente(payload);
 
       if (result.ok) {
-        router.push(`/clientes/${result.id}`);
+        router.push(`/painel/clientes/${result.id}`);
         router.refresh();
         return;
       }

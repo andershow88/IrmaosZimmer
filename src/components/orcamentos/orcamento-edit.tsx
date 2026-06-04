@@ -48,7 +48,7 @@ export function OrcamentoEdit({
         observacoes: observacoes || null,
       });
       if (!res.ok) setErro(res.error);
-      else router.push(`/orcamentos/${orcamento.id}`);
+      else router.push(`/painel/orcamentos/${orcamento.id}`);
     });
   }
 
@@ -224,7 +224,7 @@ export function OrcamentoEdit({
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push(`/orcamentos/${orcamento.id}`)}
+            onClick={() => router.push(`/painel/orcamentos/${orcamento.id}`)}
           >
             Cancelar
           </Button>

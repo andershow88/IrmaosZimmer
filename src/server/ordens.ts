@@ -7,7 +7,7 @@ import { requireUserForAction } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import type { Prisma, StatusOS, PrioridadeOS } from "@prisma/client";
 
-const ROUTE = "/ordens-servico";
+const ROUTE = "/painel/ordens-servico";
 
 // ---------------------------------------------------------------------------
 // Helpers

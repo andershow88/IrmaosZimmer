@@ -20,11 +20,11 @@ function primeiroErro(error: z.ZodError): string {
 }
 
 const REVALIDATE_PATHS = [
-  "/financeiro",
-  "/financeiro/contas-a-pagar",
-  "/financeiro/contas-a-receber",
-  "/financeiro/fluxo-de-caixa",
-  "/financeiro/caixa",
+  "/painel/financeiro",
+  "/painel/financeiro/contas-a-pagar",
+  "/painel/financeiro/contas-a-receber",
+  "/painel/financeiro/fluxo-de-caixa",
+  "/painel/financeiro/caixa",
 ];
 
 function revalidarFinanceiro(): void {

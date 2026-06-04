@@ -101,38 +101,38 @@ export function ListaInspecoes({ inspecoes }: ListaInspecoesProps) {
                 className="cursor-pointer"
               >
                 <TD className="font-medium">
-                  <Link href={`/checklists/${i.id}`} className="block hover:text-accent">
+                  <Link href={`/painel/checklists/${i.id}`} className="block hover:text-accent">
                     {i.veiculo}
                     <span className="ml-2 text-xs font-normal text-muted">{i.placa}</span>
                   </Link>
                 </TD>
                 <TD className="text-sm text-muted">
-                  <Link href={`/checklists/${i.id}`} className="block">
+                  <Link href={`/painel/checklists/${i.id}`} className="block">
                     {i.cliente}
                   </Link>
                 </TD>
                 <TD className="whitespace-nowrap text-sm">
-                  <Link href={`/checklists/${i.id}`} className="block">
+                  <Link href={`/painel/checklists/${i.id}`} className="block">
                     {formatDateBR(i.data)}
                   </Link>
                 </TD>
                 <TD className="text-sm">
-                  <Link href={`/checklists/${i.id}`} className="block">
+                  <Link href={`/painel/checklists/${i.id}`} className="block">
                     {i.osNumero ? `OS ${i.osNumero}` : <span className="text-subtle">—</span>}
                   </Link>
                 </TD>
                 <TD className="text-sm text-muted">
-                  <Link href={`/checklists/${i.id}`} className="block">
+                  <Link href={`/painel/checklists/${i.id}`} className="block">
                     {i.mecanico ?? <span className="text-subtle">—</span>}
                   </Link>
                 </TD>
                 <TD className="text-center tabular-nums">
-                  <Link href={`/checklists/${i.id}`} className="block">
+                  <Link href={`/painel/checklists/${i.id}`} className="block">
                     {i.totalItens}
                   </Link>
                 </TD>
                 <TD className="text-center">
-                  <Link href={`/checklists/${i.id}`} className="flex items-center justify-center">
+                  <Link href={`/painel/checklists/${i.id}`} className="flex items-center justify-center">
                     {i.criticos > 0 ? (
                       <Badge variant="danger" className="gap-1">
                         <AlertTriangle className="h-3 w-3" />

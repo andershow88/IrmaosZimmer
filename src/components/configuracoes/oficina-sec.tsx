@@ -14,7 +14,7 @@ export async function OficinaSecao() {
       <Card>
         <CardBody className="p-0">
           <Link
-            href="/configuracoes/auditoria"
+            href="/painel/configuracoes/auditoria"
             className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-surface/50"
           >
             <div className="flex items-center gap-3">

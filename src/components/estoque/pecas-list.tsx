@@ -53,7 +53,7 @@ export function PecasList({ pecas, categorias }: PecasListProps) {
         title="Nenhuma peça cadastrada"
         message="Cadastre peças para controlar preços, estoque e movimentações."
         action={
-          <Link href="/estoque/novo">
+          <Link href="/painel/estoque/novo">
             <Button size="sm">Cadastrar peça</Button>
           </Link>
         }
@@ -158,7 +158,7 @@ export function PecasList({ pecas, categorias }: PecasListProps) {
                   </TD>
                   <TD className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Link href={`/estoque/${p.id}/editar`}>
+                      <Link href={`/painel/estoque/${p.id}/editar`}>
                         <Button
                           variant="ghost"
                           size="icon"

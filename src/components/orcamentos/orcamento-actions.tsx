@@ -203,7 +203,7 @@ export function OrcamentoActions({ orcamento }: { orcamento: OrcamentoView }) {
           </Button>
         )}
         {orcamento.serviceOrderId && (
-          <Link href={`/ordens-servico/${orcamento.serviceOrderId}`}>
+          <Link href={`/painel/ordens-servico/${orcamento.serviceOrderId}`}>
             <Button type="button" variant="secondary" className="w-full">
               <ArrowRightCircle className="h-4 w-4" />
               Ver OS vinculada
@@ -237,7 +237,7 @@ export function OrcamentoActions({ orcamento }: { orcamento: OrcamentoView }) {
         )}
 
         {/* Imprimir */}
-        <Link href={`/orcamentos/${orcamento.id}/imprimir`} target="_blank">
+        <Link href={`/painel/orcamentos/${orcamento.id}/imprimir`} target="_blank">
           <Button type="button" variant="outline" className="w-full">
             <Printer className="h-4 w-4" />
             Imprimir / PDF
@@ -246,7 +246,7 @@ export function OrcamentoActions({ orcamento }: { orcamento: OrcamentoView }) {
 
         {/* Editar (apenas rascunho) */}
         {status === "RASCUNHO" && (
-          <Link href={`/orcamentos/${orcamento.id}/editar`}>
+          <Link href={`/painel/orcamentos/${orcamento.id}/editar`}>
             <Button type="button" variant="outline" className="w-full">
               <Pencil className="h-4 w-4" />
               Editar

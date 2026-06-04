@@ -15,11 +15,11 @@ import { cn } from "@/lib/utils";
 type Item = { href: string; label: string; icon: LucideIcon; exact?: boolean };
 
 const ITENS: Item[] = [
-  { href: "/financeiro", label: "Visão geral", icon: LayoutDashboard, exact: true },
-  { href: "/financeiro/contas-a-pagar", label: "Contas a pagar", icon: ArrowUpCircle },
-  { href: "/financeiro/contas-a-receber", label: "Contas a receber", icon: ArrowDownCircle },
-  { href: "/financeiro/fluxo-de-caixa", label: "Fluxo de caixa", icon: Activity },
-  { href: "/financeiro/caixa", label: "Caixa", icon: Wallet },
+  { href: "/painel/financeiro", label: "Visão geral", icon: LayoutDashboard, exact: true },
+  { href: "/painel/financeiro/contas-a-pagar", label: "Contas a pagar", icon: ArrowUpCircle },
+  { href: "/painel/financeiro/contas-a-receber", label: "Contas a receber", icon: ArrowDownCircle },
+  { href: "/painel/financeiro/fluxo-de-caixa", label: "Fluxo de caixa", icon: Activity },
+  { href: "/painel/financeiro/caixa", label: "Caixa", icon: Wallet },
 ];
 
 function ativo(pathname: string, item: Item): boolean {

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { requireUserForAction } from "@/lib/auth";
 import { isValidCNPJ } from "@/lib/masks";
 
-const ROUTE = "/fornecedores";
+const ROUTE = "/painel/fornecedores";
 
 const fornecedorSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome do fornecedor."),

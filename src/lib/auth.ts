@@ -59,7 +59,7 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireRole(roles: Role[]): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/entrar");
-  if (!roles.includes(user.role)) redirect("/");
+  if (!roles.includes(user.role)) redirect("/painel");
   return user;
 }
 

@@ -81,7 +81,7 @@ export function PagamentoForm({
         setError(res.error);
         return;
       }
-      router.push(`/pagamentos/${res.id}`);
+      router.push(`/painel/pagamentos/${res.id}`);
       router.refresh();
     });
   }

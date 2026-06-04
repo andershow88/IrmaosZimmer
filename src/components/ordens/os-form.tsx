@@ -51,7 +51,7 @@ export function OSForm({
     startTransition(async () => {
       const res = await createOS(formData);
       if (res.ok) {
-        router.push(`/ordens-servico/${res.id}`);
+        router.push(`/painel/ordens-servico/${res.id}`);
       } else {
         setError(res.error);
       }
@@ -164,7 +164,7 @@ export function OSForm({
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/ordens-servico")}
+            onClick={() => router.push("/painel/ordens-servico")}
             disabled={pending}
           >
             Cancelar

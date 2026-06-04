@@ -25,7 +25,7 @@ export function ClienteDelete({
       const result = await deleteCliente(id);
       if (result.ok) {
         setOpen(false);
-        router.push("/clientes");
+        router.push("/painel/clientes");
         router.refresh();
         return;
       }

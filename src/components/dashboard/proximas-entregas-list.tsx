@@ -33,7 +33,7 @@ export function ProximasEntregasList({ itens }: { itens: ProximaEntrega[] }) {
           <TR key={os.id}>
             <TD className="font-semibold">
               <Link
-                href={`/ordens-servico/${os.id}`}
+                href={`/painel/ordens-servico/${os.id}`}
                 className="text-accent hover:underline"
               >
                 {os.numero}

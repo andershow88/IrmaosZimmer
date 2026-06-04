@@ -15,14 +15,14 @@ export function ClientesSearch({ initialQuery }: { initialQuery: string }) {
     e.preventDefault();
     const q = value.trim();
     startTransition(() => {
-      router.push(q ? `/clientes?q=${encodeURIComponent(q)}` : "/clientes");
+      router.push(q ? `/painel/clientes?q=${encodeURIComponent(q)}` : "/painel/clientes");
     });
   }
 
   function clear() {
     setValue("");
     startTransition(() => {
-      router.push("/clientes");
+      router.push("/painel/clientes");
     });
   }
 

@@ -175,8 +175,8 @@ export async function createOrcamento(input: unknown): Promise<ActionResult> {
     return { ok: false, error: "Não foi possível criar o orçamento." };
   }
 
-  revalidatePath("/orcamentos");
-  redirect(`/orcamentos/${novoId}`);
+  revalidatePath("/painel/orcamentos");
+  redirect(`/painel/orcamentos/${novoId}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -215,8 +215,8 @@ export async function updateOrcamento(input: unknown): Promise<ActionResult> {
     return { ok: false, error: "Não foi possível salvar as alterações." };
   }
 
-  revalidatePath(`/orcamentos/${id}`);
-  revalidatePath("/orcamentos");
+  revalidatePath(`/painel/orcamentos/${id}`);
+  revalidatePath("/painel/orcamentos");
   return { ok: true, id };
 }
 
@@ -255,7 +255,7 @@ export async function addItem(input: unknown): Promise<ActionResult> {
     return { ok: false, error: "Não foi possível adicionar o item." };
   }
 
-  revalidatePath(`/orcamentos/${data.quoteId}`);
+  revalidatePath(`/painel/orcamentos/${data.quoteId}`);
   return { ok: true, id: data.quoteId };
 }
 
@@ -274,7 +274,7 @@ export async function removeItem(itemId: string): Promise<ActionResult> {
       await recalcularTotal(tx, item.quoteId);
       return item.quoteId;
     });
-    revalidatePath(`/orcamentos/${quoteId}`);
+    revalidatePath(`/painel/orcamentos/${quoteId}`);
     return { ok: true, id: quoteId };
   } catch {
     return { ok: false, error: "Não foi possível remover o item." };
@@ -291,7 +291,7 @@ export async function recalcular(quoteId: string): Promise<ActionResult> {
   } catch {
     return { ok: false, error: "Não foi possível recalcular o total." };
   }
-  revalidatePath(`/orcamentos/${quoteId}`);
+  revalidatePath(`/painel/orcamentos/${quoteId}`);
   return { ok: true, id: quoteId };
 }
 
@@ -341,8 +341,8 @@ export async function updateStatus(input: unknown): Promise<ActionResult> {
     return { ok: false, error: "Não foi possível atualizar o status." };
   }
 
-  revalidatePath(`/orcamentos/${id}`);
-  revalidatePath("/orcamentos");
+  revalidatePath(`/painel/orcamentos/${id}`);
+  revalidatePath("/painel/orcamentos");
   return { ok: true, id };
 }
 
@@ -359,8 +359,8 @@ export async function deleteOrcamento(id: string): Promise<ActionResult> {
   } catch {
     return { ok: false, error: "Não foi possível excluir o orçamento." };
   }
-  revalidatePath("/orcamentos");
-  redirect("/orcamentos");
+  revalidatePath("/painel/orcamentos");
+  redirect("/painel/orcamentos");
 }
 
 // ---------------------------------------------------------------------------
@@ -411,7 +411,7 @@ export async function converterEmOS(quoteId: string): Promise<ActionResult> {
 
   // Evita duplicar: se já houver uma OS vinculada a este orçamento, reaproveita.
   if (quote.serviceOrderId) {
-    redirect(`/ordens-servico/${quote.serviceOrderId}`);
+    redirect(`/painel/ordens-servico/${quote.serviceOrderId}`);
   }
 
   let osId: string;
@@ -464,7 +464,7 @@ export async function converterEmOS(quoteId: string): Promise<ActionResult> {
     return { ok: false, error: "Não foi possível converter em OS." };
   }
 
-  revalidatePath(`/orcamentos/${quoteId}`);
-  revalidatePath("/ordens");
-  redirect(`/ordens-servico/${osId}`);
+  revalidatePath(`/painel/orcamentos/${quoteId}`);
+  revalidatePath("/painel/ordens-servico");
+  redirect(`/painel/ordens-servico/${osId}`);
 }

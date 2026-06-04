@@ -47,7 +47,7 @@ export async function requirePageRole(roles: Role[]): Promise<SessionUser> {
     redirect("/entrar");
   }
   if (!roles.includes(user.role)) {
-    redirect("/");
+    redirect("/painel");
   }
   return user;
 }
@@ -64,7 +64,7 @@ export async function requirePageModule(modulo: Modulo): Promise<SessionUser> {
     redirect("/entrar");
   }
   if (!can(user.role, modulo)) {
-    redirect("/");
+    redirect("/painel");
   }
   return user;
 }

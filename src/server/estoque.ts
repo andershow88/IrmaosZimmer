@@ -123,7 +123,7 @@ export async function createPeca(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: codeError(e) };
   }
 
-  revalidatePath("/estoque");
+  revalidatePath("/painel/estoque");
   return { ok: true };
 }
 
@@ -174,8 +174,8 @@ export async function updatePeca(
     return { ok: false, error: codeError(e) };
   }
 
-  revalidatePath("/estoque");
-  revalidatePath(`/estoque/${id}/editar`);
+  revalidatePath("/painel/estoque");
+  revalidatePath(`/painel/estoque/${id}/editar`);
   return { ok: true };
 }
 
@@ -194,7 +194,7 @@ export async function deletePeca(id: string): Promise<ActionResult> {
     };
   }
 
-  revalidatePath("/estoque");
+  revalidatePath("/painel/estoque");
   return { ok: true };
 }
 
@@ -266,8 +266,8 @@ export async function registrarMovimentacao(
     };
   }
 
-  revalidatePath("/estoque/movimentacoes");
-  revalidatePath("/estoque");
+  revalidatePath("/painel/estoque/movimentacoes");
+  revalidatePath("/painel/estoque");
   return { ok: true };
 }
 

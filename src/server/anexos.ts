@@ -57,13 +57,13 @@ export type CreateAnexoInput = z.infer<typeof createSchema>;
 /** Caminho de revalidação conforme o dono do anexo. */
 function revalidateOwner(owner: AnexoOwner) {
   if (owner.serviceOrderId) {
-    revalidatePath(`/ordens-servico/${owner.serviceOrderId}`);
+    revalidatePath(`/painel/ordens-servico/${owner.serviceOrderId}`);
   }
   if (owner.vehicleId) {
-    revalidatePath(`/veiculos/${owner.vehicleId}`);
+    revalidatePath(`/painel/veiculos/${owner.vehicleId}`);
   }
   if (owner.inspectionId) {
-    revalidatePath(`/checklists/${owner.inspectionId}`);
+    revalidatePath(`/painel/checklists/${owner.inspectionId}`);
   }
 }
 

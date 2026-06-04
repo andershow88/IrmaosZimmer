@@ -96,7 +96,7 @@ export async function registrarPagamento(formData: FormData): Promise<ActionResu
     `Pagamento registrado (OS ${os.numero}): pago ${data.valorPago} de ${data.valorTotal}, status ${status}.`
   );
 
-  revalidatePath("/pagamentos");
+  revalidatePath("/painel/pagamentos");
   return { ok: true, id: created.id };
 }
 
@@ -153,8 +153,8 @@ export async function updatePagamento(formData: FormData): Promise<ActionResult>
     `Pagamento atualizado: pago ${data.valorPago} de ${data.valorTotal}, status ${status}.`
   );
 
-  revalidatePath("/pagamentos");
-  revalidatePath(`/pagamentos/${data.id}`);
+  revalidatePath("/painel/pagamentos");
+  revalidatePath(`/painel/pagamentos/${data.id}`);
   return { ok: true, id: data.id };
 }
 
@@ -175,6 +175,6 @@ export async function deletePagamento(id: string): Promise<ActionResult> {
     `Pagamento excluído (valor total ${existing.valorTotal}).`
   );
 
-  revalidatePath("/pagamentos");
+  revalidatePath("/painel/pagamentos");
   return { ok: true, id };
 }

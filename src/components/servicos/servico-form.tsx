@@ -52,7 +52,7 @@ export function ServicoForm({
 
   useEffect(() => {
     if (state.ok) {
-      router.push("/servicos");
+      router.push("/painel/servicos");
       router.refresh();
     }
   }, [state.ok, router]);
@@ -199,7 +199,7 @@ export function ServicoForm({
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/servicos")}
+            onClick={() => router.push("/painel/servicos")}
             disabled={pending}
           >
             Cancelar

@@ -82,7 +82,7 @@ export function AgendamentoForm({
   // Redireciona para o detalhe após sucesso (efeito, não durante o render).
   useEffect(() => {
     if (state.ok && state.id) {
-      router.push(`/agenda/${state.id}`);
+      router.push(`/painel/agenda/${state.id}`);
     }
   }, [state.ok, state.id, router]);
 

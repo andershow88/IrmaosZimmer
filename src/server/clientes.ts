@@ -107,7 +107,7 @@ export async function createCliente(input: ClienteInput): Promise<ActionResult> 
     select: { id: true },
   });
 
-  revalidatePath("/clientes");
+  revalidatePath("/painel/clientes");
   return { ok: true, id: cliente.id };
 }
 
@@ -153,8 +153,8 @@ export async function updateCliente(
     },
   });
 
-  revalidatePath("/clientes");
-  revalidatePath(`/clientes/${id}`);
+  revalidatePath("/painel/clientes");
+  revalidatePath(`/painel/clientes/${id}`);
   return { ok: true, id };
 }
 
@@ -184,6 +184,6 @@ export async function deleteCliente(id: string): Promise<ActionResult> {
   // Veículos e agendamentos são removidos em cascata pelo schema.
   await prisma.customer.delete({ where: { id } });
 
-  revalidatePath("/clientes");
+  revalidatePath("/painel/clientes");
   return { ok: true, id };
 }

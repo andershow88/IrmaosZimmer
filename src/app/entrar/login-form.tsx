@@ -24,7 +24,7 @@ export function LoginForm() {
         body: JSON.stringify({ email, senha }),
       });
       if (res.ok) {
-        router.push("/");
+        router.push("/painel");
         router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));

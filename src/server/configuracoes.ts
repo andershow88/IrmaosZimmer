@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 import { requireRoleForAction, type Role } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 
-const ROUTE = "/configuracoes";
+const ROUTE = "/painel/configuracoes";
 
 const ROLES = [
   "ADMINISTRADOR",

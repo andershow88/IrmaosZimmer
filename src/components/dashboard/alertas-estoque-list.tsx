@@ -31,7 +31,7 @@ export function AlertasEstoqueList({ itens }: { itens: AlertaEstoque[] }) {
               </div>
               <div className="min-w-0">
                 <Link
-                  href="/estoque"
+                  href="/painel/estoque"
                   className="block truncate text-sm font-medium text-foreground hover:text-accent"
                 >
                   {p.nome}

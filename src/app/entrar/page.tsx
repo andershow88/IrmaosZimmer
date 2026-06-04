@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default async function EntrarPage() {
   const session = await getSession();
-  if (session) redirect("/");
+  if (session) redirect("/painel");
 
   return (
     <div className="min-h-dvh flex items-center justify-center bg-bg px-4">

@@ -129,7 +129,7 @@ export function InspecaoForm({ veiculos, ordens, mecanicos }: InspecaoFormProps)
       });
 
       if (res.ok) {
-        router.push(`/checklists/${res.id}`);
+        router.push(`/painel/checklists/${res.id}`);
         router.refresh();
       } else {
         setErro(res.error);

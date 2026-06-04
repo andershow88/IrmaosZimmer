@@ -68,7 +68,7 @@ export async function createInspecao(
     select: { id: true },
   });
 
-  revalidatePath("/checklists");
+  revalidatePath("/painel/checklists");
   return { ok: true, id: inspecao.id };
 }
 
@@ -106,8 +106,8 @@ export async function updateItem(input: UpdateItemInput): Promise<ActionResult> 
     },
   });
 
-  revalidatePath(`/checklists/${item.inspectionId}`);
-  revalidatePath("/checklists");
+  revalidatePath(`/painel/checklists/${item.inspectionId}`);
+  revalidatePath("/painel/checklists");
   return { ok: true, id: item.id };
 }
 
@@ -143,6 +143,6 @@ export async function gerarResumoIA(inspectionId: string): Promise<ActionResult>
     data: { resumoIA: resumo },
   });
 
-  revalidatePath(`/checklists/${inspectionId}`);
+  revalidatePath(`/painel/checklists/${inspectionId}`);
   return { ok: true, id: inspectionId };
 }

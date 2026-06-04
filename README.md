@@ -10,6 +10,44 @@ Server Actions, Prisma/PostgreSQL e autenticação JWT própria. Interface 100% 
 
 ---
 
+## Site público
+
+O sistema tem duas faces na mesma aplicação:
+
+- **Site público** (sem login) — a vitrine da oficina, aberta a qualquer visitante.
+- **Administração interna** (com login) — toda a gestão agora vive sob **`/painel`**
+  e exige sessão. Sem cookie de sessão válido, qualquer acesso a `/painel*` é
+  redirecionado para `/entrar`.
+
+### Rotas públicas
+
+| Rota          | Conteúdo                                                              |
+| ------------- | -------------------------------------------------------------------- |
+| `/`           | Página inicial / vitrine da oficina.                                 |
+| `/sobre`      | Sobre a Irmãos Zimmer (história, equipe, diferenciais).              |
+| `/servicos`   | Catálogo de serviços oferecidos.                                     |
+| `/acessorios` | Acessórios disponíveis.                                              |
+| `/contato`    | Dados de contato, endereço e canais de atendimento.                 |
+| `/agendar`    | Formulário de **agendamento online** (sem login).                   |
+
+> O controle de acesso fica em `src/proxy.ts` (Proxy/Middleware do Next 16):
+> libera `/`, `/sobre`, `/servicos`, `/acessorios`, `/contato`, `/agendar`,
+> `/entrar`, assets e as APIs públicas (`/api/auth`, `/api/health`,
+> `/api/agendar`); protege `/painel*` e as demais rotas `/api/*`.
+
+### Fluxo de agendamento online → Agenda interna
+
+1. O visitante preenche o formulário em **`/agendar`** (nome, telefone/WhatsApp,
+   veículo, serviço desejado, data/hora e consentimento LGPD).
+2. O formulário envia um `POST` para a API pública **`/api/agendar`**, que valida
+   os dados (Zod), aplica rate-limit por IP e tem honeypot anti-spam.
+3. A API localiza ou cria o **cliente** (e o **veículo**, se informado) e grava um
+   **`Appointment` com status `AGENDADO`**.
+4. O agendamento aparece automaticamente na **Agenda interna** (`/painel/agenda`),
+   onde a equipe confirma, atende ou cancela.
+
+---
+
 ## Tech Stack
 
 | Camada              | Tecnologia                                              |

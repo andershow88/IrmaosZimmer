@@ -143,8 +143,8 @@ export async function createVeiculo(
     select: { id: true },
   });
 
-  revalidatePath("/veiculos");
-  redirect(`/veiculos/${veiculo.id}`);
+  revalidatePath("/painel/veiculos");
+  redirect(`/painel/veiculos/${veiculo.id}`);
 }
 
 export async function updateVeiculo(
@@ -193,9 +193,9 @@ export async function updateVeiculo(
     },
   });
 
-  revalidatePath("/veiculos");
-  revalidatePath(`/veiculos/${id}`);
-  redirect(`/veiculos/${id}`);
+  revalidatePath("/painel/veiculos");
+  revalidatePath(`/painel/veiculos/${id}`);
+  redirect(`/painel/veiculos/${id}`);
 }
 
 export async function deleteVeiculo(id: string): Promise<VeiculoActionState> {
@@ -222,6 +222,6 @@ export async function deleteVeiculo(id: string): Promise<VeiculoActionState> {
 
   await prisma.vehicle.delete({ where: { id } });
 
-  revalidatePath("/veiculos");
-  redirect("/veiculos");
+  revalidatePath("/painel/veiculos");
+  redirect("/painel/veiculos");
 }

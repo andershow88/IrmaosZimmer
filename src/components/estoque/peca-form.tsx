@@ -71,7 +71,7 @@ export function PecaForm({ fornecedores, initial }: PecaFormProps) {
       }
 
       if (result.ok) {
-        router.push("/estoque");
+        router.push("/painel/estoque");
         router.refresh();
       } else {
         setError(result.error);
@@ -238,7 +238,7 @@ export function PecaForm({ fornecedores, initial }: PecaFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push("/estoque")}
+          onClick={() => router.push("/painel/estoque")}
           disabled={pending}
         >
           Cancelar

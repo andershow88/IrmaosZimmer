@@ -438,7 +438,7 @@ export function VeiculoForm({
         </CardBody>
 
         <CardFooter className="flex justify-end gap-2">
-          <Link href={veiculoId ? `/veiculos/${veiculoId}` : "/veiculos"}>
+          <Link href={veiculoId ? `/painel/veiculos/${veiculoId}` : "/painel/veiculos"}>
             <Button type="button" variant="outline">
               Cancelar
             </Button>

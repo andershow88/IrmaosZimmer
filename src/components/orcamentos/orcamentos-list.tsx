@@ -97,12 +97,12 @@ export function OrcamentosList({ rows }: { rows: Row[] }) {
             {filtrados.map((r) => (
               <TR key={r.id} className="cursor-pointer">
                 <TD className="font-semibold">
-                  <Link href={`/orcamentos/${r.id}`} className="hover:text-accent">
+                  <Link href={`/painel/orcamentos/${r.id}`} className="hover:text-accent">
                     {r.numero}
                   </Link>
                 </TD>
                 <TD>
-                  <Link href={`/orcamentos/${r.id}`} className="block">
+                  <Link href={`/painel/orcamentos/${r.id}`} className="block">
                     {r.clienteNome}
                   </Link>
                 </TD>

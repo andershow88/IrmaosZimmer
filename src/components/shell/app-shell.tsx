@@ -29,20 +29,20 @@ import { LogoutButton } from "@/components/shell/logout-button";
 type NavItem = { label: string; href: string; icon: LucideIcon; exact?: boolean };
 
 const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard, exact: true },
-  { label: "Clientes", href: "/clientes", icon: Users },
-  { label: "Veículos", href: "/veiculos", icon: Car },
-  { label: "Ordens de Serviço", href: "/ordens-servico", icon: ClipboardList },
-  { label: "Orçamentos", href: "/orcamentos", icon: FileText },
-  { label: "Agenda", href: "/agenda", icon: CalendarDays },
-  { label: "Checklists", href: "/checklists", icon: ListChecks },
-  { label: "Peças & Estoque", href: "/estoque", icon: Package },
-  { label: "Pagamentos", href: "/pagamentos", icon: CreditCard },
-  { label: "Financeiro", href: "/financeiro", icon: Wallet },
-  { label: "Fornecedores", href: "/fornecedores", icon: Truck },
-  { label: "Relatórios", href: "/relatorios", icon: BarChart3 },
-  { label: "Assistente AI", href: "/assistente", icon: Sparkles },
-  { label: "Configurações", href: "/configuracoes", icon: Settings },
+  { label: "Dashboard", href: "/painel", icon: LayoutDashboard, exact: true },
+  { label: "Clientes", href: "/painel/clientes", icon: Users },
+  { label: "Veículos", href: "/painel/veiculos", icon: Car },
+  { label: "Ordens de Serviço", href: "/painel/ordens-servico", icon: ClipboardList },
+  { label: "Orçamentos", href: "/painel/orcamentos", icon: FileText },
+  { label: "Agenda", href: "/painel/agenda", icon: CalendarDays },
+  { label: "Checklists", href: "/painel/checklists", icon: ListChecks },
+  { label: "Peças & Estoque", href: "/painel/estoque", icon: Package },
+  { label: "Pagamentos", href: "/painel/pagamentos", icon: CreditCard },
+  { label: "Financeiro", href: "/painel/financeiro", icon: Wallet },
+  { label: "Fornecedores", href: "/painel/fornecedores", icon: Truck },
+  { label: "Relatórios", href: "/painel/relatorios", icon: BarChart3 },
+  { label: "Assistente AI", href: "/painel/assistente", icon: Sparkles },
+  { label: "Configurações", href: "/painel/configuracoes", icon: Settings },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -60,7 +60,7 @@ function isActive(pathname: string, item: NavItem): boolean {
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center" aria-label="ZimmerOS AI — Irmãos Zimmer">
+    <Link href="/painel" className="flex items-center" aria-label="ZimmerOS AI — Irmãos Zimmer">
       <img src="/logo.png" alt="Mecânica Irmãos Zimmer" className="logo-plate h-9 w-auto" />
     </Link>
   );
