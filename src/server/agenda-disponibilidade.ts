@@ -139,6 +139,25 @@ export async function getConfigAgenda(): Promise<ConfigAgendaCompleta> {
   if (!config) {
     config = await prisma.agendaConfig.create({ data: {} });
   }
+
+  // Auto-seed idempotente do expediente padrão: garante que ambientes onde o
+  // seed não roda em banco já populado (ex.: Railway) tenham horários válidos.
+  // Seg-Sex 08-18 (almoço 12-13), Sáb 08-12, Dom fechado. (0=Dom .. 6=Sáb)
+  if ((await prisma.horarioExpediente.count()) === 0) {
+    await prisma.horarioExpediente.createMany({
+      data: [
+        { diaSemana: 0, aberto: false, abre: "08:00", fecha: "12:00" },
+        { diaSemana: 1, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" },
+        { diaSemana: 2, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" },
+        { diaSemana: 3, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" },
+        { diaSemana: 4, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" },
+        { diaSemana: 5, aberto: true, abre: "08:00", fecha: "18:00", pausaInicio: "12:00", pausaFim: "13:00" },
+        { diaSemana: 6, aberto: true, abre: "08:00", fecha: "12:00" },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
   const [expediente, diasBloqueados] = await Promise.all([
     prisma.horarioExpediente.findMany({ orderBy: { diaSemana: "asc" } }),
     prisma.diaBloqueado.findMany({ orderBy: { data: "asc" } }),
