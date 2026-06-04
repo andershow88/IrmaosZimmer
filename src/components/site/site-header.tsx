@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Lock, CalendarCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 
 const NAV_LINKS = [
   { href: "/", label: "Início" },
@@ -60,6 +61,7 @@ export function SiteHeader() {
 
         {/* Ações desktop */}
         <div className="hidden items-center gap-3 lg:flex">
+          <ThemeToggle />
           <Link
             href="/entrar"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-subtle transition hover:text-foreground"
@@ -118,6 +120,10 @@ export function SiteHeader() {
               <CalendarCheck className="h-4 w-4" />
               Agendar horário
             </Link>
+            <div className="mt-2 flex items-center gap-2 border-t border-border pt-3">
+              <ThemeToggle />
+              <span className="text-xs text-muted">Tema: sistema, claro ou escuro</span>
+            </div>
             <Link
               href="/entrar"
               onClick={() => setOpen(false)}
