@@ -177,6 +177,55 @@ export async function getProximasEntregas(): Promise<ProximaEntrega[]> {
   }));
 }
 
+export type Aniversariante = {
+  id: string;
+  nome: string;
+  dia: number;
+  whatsapp: string | null;
+  telefone: string | null;
+};
+
+/**
+ * Clientes que fazem aniversário no mês atual (ordenados por dia).
+ * O ano de nascimento varia, então filtramos o mês em memória.
+ */
+export async function getAniversariantesDoMes(): Promise<Aniversariante[]> {
+  const mesAtual = new Date().getMonth(); // 0-11
+
+  const clientes = await prisma.customer.findMany({
+    where: { dataNascimento: { not: null } },
+    select: {
+      id: true,
+      nome: true,
+      dataNascimento: true,
+      whatsapp: true,
+      telefone: true,
+    },
+  });
+
+  return clientes
+    .filter(
+      (c) =>
+        c.dataNascimento != null &&
+        c.dataNascimento.getUTCMonth() === mesAtual
+    )
+    .map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      dia: c.dataNascimento!.getUTCDate(),
+      whatsapp: c.whatsapp,
+      telefone: c.telefone,
+    }))
+    .sort((a, b) => a.dia - b.dia);
+}
+
+/** Quantidade de avisos de revisão pendentes (inbox de avisos). */
+export async function getRevisoesPendentesCount(): Promise<number> {
+  return prisma.reminder.count({
+    where: { tipo: "REVISAO", status: "PENDENTE" },
+  });
+}
+
 /** Peças com estoque igual ou abaixo do mínimo. */
 export async function getAlertasEstoqueBaixo(): Promise<AlertaEstoque[]> {
   // Prisma não compara dois campos em where; filtramos em memória sobre peças com mínimo definido.

@@ -8,6 +8,7 @@ import {
   ArrowUpCircle,
   Activity,
   Wallet,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ const ITENS: Item[] = [
   { href: "/painel/financeiro", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { href: "/painel/financeiro/contas-a-pagar", label: "Contas a pagar", icon: ArrowUpCircle },
   { href: "/painel/financeiro/contas-a-receber", label: "Contas a receber", icon: ArrowDownCircle },
+  { href: "/painel/financeiro/contas-a-faturar", label: "OS a faturar", icon: Receipt },
   { href: "/painel/financeiro/fluxo-de-caixa", label: "Fluxo de caixa", icon: Activity },
   { href: "/painel/financeiro/caixa", label: "Caixa", icon: Wallet },
 ];

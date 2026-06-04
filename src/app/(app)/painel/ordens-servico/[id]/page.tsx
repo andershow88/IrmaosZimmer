@@ -12,7 +12,7 @@ import {
   Paperclip,
 } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getSession } from "@/lib/auth";
 import { formatBRL, formatDateBR, formatDateTimeBR } from "@/lib/utils";
 import { maskTelefone } from "@/lib/masks";
 import { waLink, msgVeiculoPronto } from "@/lib/whatsapp";
@@ -31,6 +31,7 @@ import { GarantiaForm } from "@/components/garantias/garantia-form";
 import { GarantiasList } from "@/components/garantias/garantias-list";
 import { AnexoUpload } from "@/components/anexos/anexo-upload";
 import { AnexosGaleria } from "@/components/anexos/anexos-galeria";
+import { HorasSecao } from "@/components/ordens/horas-secao";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,7 @@ export default async function OSDetailPage({
   params: Promise<{ id: string }>;
 }) {
   await requireUser();
+  const session = await getSession();
   const { id } = await params;
 
   const os = await prisma.serviceOrder.findUnique({
@@ -67,6 +69,10 @@ export default async function OSDetailPage({
       items: { orderBy: { tipo: "asc" } },
       warranties: { orderBy: { createdAt: "desc" } },
       attachments: { orderBy: { createdAt: "desc" } },
+      timeEntries: {
+        orderBy: { inicio: "desc" },
+        include: { user: { select: { name: true } } },
+      },
     },
   });
 
@@ -110,6 +116,20 @@ export default async function OSDetailPage({
   const valorPecas = n(os.valorPecas);
   const desconto = n(os.desconto);
   const total = n(os.total);
+
+  // Apontamentos de horas para a seção "Horas".
+  const apontamentos = os.timeEntries.map((t) => ({
+    id: t.id,
+    mecanico: t.user?.name ?? "—",
+    inicio: t.inicio,
+    fim: t.fim,
+    minutos: t.minutos,
+    emAndamento: t.fim == null,
+  }));
+  // Apontamento aberto do mecânico logado (controla o botão Iniciar/Parar).
+  const apontamentoAbertoId =
+    os.timeEntries.find((t) => t.fim == null && t.userId === session?.id)?.id ??
+    null;
 
   const veiculoLabel = `${os.vehicle.marca} ${os.vehicle.modelo} (${os.vehicle.placa})`;
 
@@ -207,6 +227,15 @@ export default async function OSDetailPage({
               )}
             </CardBody>
           </Card>
+
+          {/* Horas / Apontamentos */}
+          <HorasSecao
+            serviceOrderId={os.id}
+            tempoPrevistoMin={os.tempoPrevistoMin}
+            apontamentos={apontamentos}
+            apontamentoAbertoId={apontamentoAbertoId}
+            desabilitado={finalizada}
+          />
 
           {/* Garantias */}
           <Card>

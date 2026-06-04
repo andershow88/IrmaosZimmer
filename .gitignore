@@ -49,3 +49,6 @@ prisma/dev.db-journal
 # logs
 logs
 *.log
+
+# screenshots / capturas avulsas na raiz
+/Foto_*.png

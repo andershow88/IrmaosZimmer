@@ -286,3 +286,89 @@ function codeError(e: unknown): string {
   }
   return "Não foi possível salvar a peça.";
 }
+
+// ============================================================
+// Giro de estoque — peças sem saída há mais de 6 meses
+// ============================================================
+
+export type PecaParada = {
+  id: string;
+  nome: string;
+  codigoInterno: string;
+  categoria: string | null;
+  quantidade: number;
+  precoCusto: number;
+  valorParado: number;
+  ultimaSaida: string | null;
+  createdAt: string;
+};
+
+/**
+ * Peças sem giro: nenhuma movimentação de SAÍDA nos últimos 6 meses
+ * (ou nunca movimentadas com saída e cadastradas há mais de 6 meses).
+ * A última saída é derivada de InventoryMovement (tipo SAIDA), sem alterar o schema.
+ * Considera apenas peças com quantidade em estoque (> 0). Ordena pelo maior valor parado.
+ */
+export async function getPecasParadas(): Promise<{
+  pecas: PecaParada[];
+  totalValorParado: number;
+}> {
+  await requireRoleForAction([...ESTOQUE_ROLES]);
+
+  const corte = new Date();
+  corte.setMonth(corte.getMonth() - 6);
+
+  const [parts, ultimasSaidas] = await Promise.all([
+    prisma.part.findMany({
+      where: { quantidade: { gt: 0 } },
+      select: {
+        id: true,
+        nome: true,
+        codigoInterno: true,
+        categoria: true,
+        quantidade: true,
+        precoCusto: true,
+        createdAt: true,
+      },
+      orderBy: { nome: "asc" },
+    }),
+    prisma.inventoryMovement.groupBy({
+      by: ["partId"],
+      where: { tipo: "SAIDA" },
+      _max: { createdAt: true },
+    }),
+  ]);
+
+  const ultimaSaidaPorPeca = new Map<string, Date>();
+  for (const m of ultimasSaidas) {
+    if (m._max.createdAt) ultimaSaidaPorPeca.set(m.partId, m._max.createdAt);
+  }
+
+  const lista: PecaParada[] = [];
+  for (const p of parts) {
+    const ultima = ultimaSaidaPorPeca.get(p.id) ?? null;
+
+    // Sem giro se: nunca teve saída e foi cadastrada há mais de 6 meses,
+    // ou a última saída ocorreu antes da data de corte.
+    const semGiro = ultima ? ultima < corte : p.createdAt < corte;
+    if (!semGiro) continue;
+
+    const precoCusto = Number(p.precoCusto);
+    lista.push({
+      id: p.id,
+      nome: p.nome,
+      codigoInterno: p.codigoInterno,
+      categoria: p.categoria,
+      quantidade: p.quantidade,
+      precoCusto,
+      valorParado: precoCusto * p.quantidade,
+      ultimaSaida: ultima ? ultima.toISOString() : null,
+      createdAt: p.createdAt.toISOString(),
+    });
+  }
+
+  lista.sort((a, b) => b.valorParado - a.valorParado);
+  const totalValorParado = lista.reduce((acc, p) => acc + p.valorParado, 0);
+
+  return { pecas: lista, totalValorParado };
+}

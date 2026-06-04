@@ -26,6 +26,15 @@ function gerarNumero(prefixo: string, seq: number): string {
   return `${prefixo}-${ano}-${String(seq).padStart(4, "0")}`;
 }
 
+/** Data de nascimento: idade em anos + dia/mês fixos (mês 1-12). */
+function nascimento(idade: number, mes: number, dia: number): Date {
+  const ano = new Date().getFullYear() - idade;
+  return new Date(ano, mes - 1, dia, 12, 0, 0, 0);
+}
+
+/** Mês atual (1-12) — para garantir aniversariantes no mês corrente do seed. */
+const MES_ATUAL = new Date().getMonth() + 1;
+
 // ---------- Execução ----------
 
 async function main() {
@@ -158,6 +167,7 @@ async function main() {
       telefone: "(51) 99999-0003",
       filialId: matriz.id,
       comissaoPercent: dec(8),
+      cargaHorariaDiaria: 8,
     },
   });
 
@@ -170,6 +180,7 @@ async function main() {
       telefone: "(51) 99999-0004",
       filialId: matriz.id,
       comissaoPercent: dec(6),
+      cargaHorariaDiaria: 8,
     },
   });
 
@@ -211,6 +222,7 @@ async function main() {
     estado: string;
     cep: string;
     endereco: string;
+    dataNascimento: Date;
     veiculo: {
       placa: string;
       marca: string;
@@ -239,6 +251,8 @@ async function main() {
       estado: "RS",
       cep: "93730-000",
       endereco: "Rua das Flores, 120",
+      // Aniversariante do MÊS ATUAL (1/2).
+      dataNascimento: nascimento(42, MES_ATUAL, 12),
       veiculo: {
         placa: "IVR-5678",
         marca: "Volkswagen",
@@ -260,6 +274,7 @@ async function main() {
       estado: "RS",
       cep: "93310-000",
       endereco: "Av. Pedro Adams Filho, 850",
+      dataNascimento: nascimento(29, 3, 5),
       veiculo: {
         placa: "RGH4B22",
         marca: "Chevrolet",
@@ -281,6 +296,7 @@ async function main() {
       estado: "RS",
       cep: "93010-000",
       endereco: "Rua Independência, 47",
+      dataNascimento: nascimento(55, 9, 22),
       veiculo: {
         placa: "ABC-1234",
         marca: "Fiat",
@@ -302,6 +318,8 @@ async function main() {
       estado: "RS",
       cep: "93800-000",
       endereco: "Distrito Industrial, Lote 14",
+      // PJ — data de fundação (placeholder; não conta como aniversariante de pessoa).
+      dataNascimento: nascimento(15, 11, 3),
       veiculo: {
         placa: "MNO2A45",
         marca: "Fiat",
@@ -323,6 +341,8 @@ async function main() {
       estado: "RS",
       cep: "95670-000",
       endereco: "Rua Coberta, 200",
+      // Aniversariante do MÊS ATUAL (2/2).
+      dataNascimento: nascimento(37, MES_ATUAL, 25),
       veiculo: {
         placa: "JKL9F88",
         marca: "Toyota",
@@ -344,6 +364,7 @@ async function main() {
       estado: "RS",
       cep: "93950-000",
       endereco: "Av. São Miguel, 1500",
+      dataNascimento: nascimento(48, 1, 18),
       veiculo: {
         placa: "PQR3C67",
         marca: "Toyota",
@@ -365,6 +386,7 @@ async function main() {
       estado: "RS",
       cep: "93900-000",
       endereco: "Rua Bento Gonçalves, 333",
+      dataNascimento: nascimento(33, 7, 9),
       veiculo: {
         placa: "STU-7654",
         marca: "Volkswagen",
@@ -386,6 +408,7 @@ async function main() {
       estado: "RS",
       cep: "93600-000",
       endereco: "Rua Portugal, 90",
+      dataNascimento: nascimento(26, 4, 30),
       veiculo: {
         placa: "VWX5D90",
         marca: "Hyundai",
@@ -414,6 +437,7 @@ async function main() {
         cidade: c.cidade,
         estado: c.estado,
         cep: c.cep,
+        dataNascimento: c.dataNascimento,
         lgpdConsent: true,
         vehicles: {
           create: {
@@ -737,6 +761,8 @@ async function main() {
     clienteIdx: number;
     total: number;
     status: string;
+    mecanicoId: string;
+    tempoPrevistoMin: number;
   }> = [];
 
   let seqOs = 1;
@@ -744,9 +770,10 @@ async function main() {
     const cli = clientes[os.clienteIdx];
     const mec = mecanicos[os.mecanicoIdx];
 
-    // Calcular itens, valores.
+    // Calcular itens, valores e tempo previsto (soma dos serviços).
     let valorMaoObra = 0;
     let valorPecas = 0;
+    let tempoPrevistoMin = 0;
     const itensData = os.itens.map((it) => {
       if (it.tipo === "SERVICO") {
         const s = servicoPorNome(it.servico);
@@ -754,6 +781,9 @@ async function main() {
         const preco = it.preco ?? Number(s.precoPadrao);
         const subtotal = preco * qtd;
         valorMaoObra += subtotal;
+        // Snapshot do tempo estimado do serviço, multiplicado pela quantidade.
+        const tempoItem = (s.tempoEstimadoMin ?? 0) * qtd;
+        tempoPrevistoMin += tempoItem;
         return {
           tipo: "SERVICO" as const,
           serviceId: s.id,
@@ -761,6 +791,7 @@ async function main() {
           quantidade: qtd,
           precoUnitario: dec(preco),
           subtotal: dec(subtotal),
+          tempoEstimadoMin: s.tempoEstimadoMin ?? null,
         };
       } else {
         const p = pecaPorCodigo(it.peca);
@@ -802,6 +833,7 @@ async function main() {
         valorPecas: dec(valorPecas),
         desconto: dec(desconto),
         total: dec(total),
+        tempoPrevistoMin,
         items: { create: itensData },
       },
     });
@@ -813,6 +845,8 @@ async function main() {
       clienteIdx: os.clienteIdx,
       total,
       status: os.status,
+      mecanicoId: mec.id,
+      tempoPrevistoMin,
     });
   }
 
@@ -1119,6 +1153,56 @@ async function main() {
   }
 
   // ---------------------------------------------------------
+  // APONTAMENTO DE HORAS (TimeEntry)
+  // ---------------------------------------------------------
+  console.log("⏱️ Criando apontamentos de horas…");
+
+  // Helper local: cria um TimeEntry fechado (com fim/minutos) a partir de um
+  // início (dias atrás, hora) e uma duração em minutos.
+  async function apontar(
+    serviceOrderId: string,
+    userId: string,
+    diasAtras: number,
+    horaInicio: number,
+    minutos: number,
+    observacao?: string,
+  ) {
+    const inicio = emDias(-Math.abs(diasAtras), horaInicio, 0);
+    const fim = new Date(inicio.getTime() + minutos * 60_000);
+    await prisma.timeEntry.create({
+      data: { serviceOrderId, userId, inicio, fim, minutos, observacao },
+    });
+  }
+
+  // OS CONCLUÍDA: horas EXECUTADAS MAIORES que o previsto (alarme vermelho).
+  // Previsto ~205 min; executado 150 + 120 = 270 min.
+  if (osConcluida) {
+    const mec = osConcluida.mecanicoId;
+    await apontar(osConcluida.id, mec, 3, 8, 150, "Troca de amortecedores (mais trabalhoso que o previsto).");
+    await apontar(osConcluida.id, mec, 2, 9, 120, "Geometria e balanceamento + reaperto.");
+  }
+
+  // OS EM EXECUÇÃO: um apontamento fechado + um em aberto (fim/minutos nulos).
+  if (osExecucao) {
+    const mec = osExecucao.mecanicoId;
+    await apontar(osExecucao.id, mec, 1, 8, 90, "Início da revisão de 90 mil km.");
+    // Apontamento ABERTO (em andamento) — sem fim/minutos.
+    await prisma.timeEntry.create({
+      data: {
+        serviceOrderId: osExecucao.id,
+        userId: mec,
+        inicio: emDias(0, 8, 30),
+        observacao: "Continuação da revisão — em andamento.",
+      },
+    });
+  }
+
+  // OS ENTREGUE: apontamento fechado dentro do previsto.
+  if (osEntregue) {
+    await apontar(osEntregue.id, osEntregue.mecanicoId, 2, 14, 70, "Troca de óleo e velas.");
+  }
+
+  // ---------------------------------------------------------
   // INTERAÇÕES DE IA
   // ---------------------------------------------------------
   console.log("🤖 Criando interações de IA (exemplos)…");
@@ -1214,6 +1298,35 @@ async function main() {
       vehicleId: clientes[4].vehicleId,
       dueDate: emDias(15, 9),
       canal: "EMAIL",
+      status: "PENDENTE",
+    },
+  });
+  // Aniversário (aniversariantes do mês atual: clientes[0] e clientes[4]).
+  await prisma.reminder.create({
+    data: {
+      tipo: "ANIVERSARIO",
+      customerId: clientes[0].customerId,
+      dueDate: emDias(3, 9),
+      canal: "WHATSAPP",
+      status: "PENDENTE",
+    },
+  });
+  await prisma.reminder.create({
+    data: {
+      tipo: "ANIVERSARIO",
+      customerId: clientes[4].customerId,
+      dueDate: emDias(10, 9),
+      canal: "WHATSAPP",
+      status: "PENDENTE",
+    },
+  });
+  await prisma.reminder.create({
+    data: {
+      tipo: "REVISAO",
+      customerId: clientes[2].customerId,
+      vehicleId: clientes[2].vehicleId,
+      dueDate: emDias(45, 9),
+      canal: "WHATSAPP",
       status: "PENDENTE",
     },
   });
@@ -1315,6 +1428,7 @@ async function main() {
     portalUsers: await prisma.customerUser.count(),
     avaliacoes: await prisma.review.count(),
     lembretes: await prisma.reminder.count(),
+    apontamentosHoras: await prisma.timeEntry.count(),
     contasReceber: await prisma.accountReceivable.count(),
     contasPagar: await prisma.accountPayable.count(),
   };

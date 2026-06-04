@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Percent,
   Coins,
+  Timer,
 } from "lucide-react";
 import { requirePageRole } from "@/lib/permissions-server";
 import { formatBRL, formatNumber } from "@/lib/utils";
@@ -28,6 +29,7 @@ import { OrcamentosChart } from "@/components/relatorios/orcamentos-chart";
 import { PeriodoSelect } from "@/components/relatorios/periodo-select";
 import { MargemChart } from "@/components/relatorios/margem-chart";
 import { ComissaoChart } from "@/components/relatorios/comissao-chart";
+import { ProdutividadeHorasChart } from "@/components/relatorios/produtividade-horas-chart";
 import { ExportButton } from "@/components/relatorios/export-button";
 import { CHART_COLORS } from "@/components/relatorios/chart-theme";
 
@@ -152,6 +154,23 @@ export default async function RelatoriosPage({
               <ComissaoChart data={data.comissaoMecanicos} />
             ) : (
               <SemDadosGrafico texto="Nenhuma OS atribuída a mecânicos no período." />
+            )}
+          </ReportCard>
+
+          {/* Produtividade em horas: disponíveis x executadas x vendidas */}
+          <ReportCard
+            title="Produtividade em horas"
+            icon={Timer}
+            description={`Horas disponíveis, executadas e vendidas por mecânico — últimos ${data.produtividadeHorasDias} dias`}
+            className="lg:col-span-2"
+          >
+            {data.produtividadeHoras.length > 0 ? (
+              <ProdutividadeHorasChart
+                data={data.produtividadeHoras}
+                gargalo={data.gargaloHoras}
+              />
+            ) : (
+              <SemDadosGrafico texto="Nenhum mecânico ativo cadastrado para medir produtividade." />
             )}
           </ReportCard>
 

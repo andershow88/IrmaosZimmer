@@ -7,26 +7,31 @@ import {
   AlertTriangle,
   PackageX,
   DollarSign,
+  Hourglass,
 } from "lucide-react";
 import { requirePageRole } from "@/lib/permissions-server";
 import { prisma } from "@/lib/db";
-import { formatBRL, formatNumber } from "@/lib/utils";
+import { formatBRL, formatNumber, formatDateBR } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PecasList, type PecaRow } from "@/components/estoque/pecas-list";
+import { getPecasParadas } from "@/server/estoque";
 
 export const dynamic = "force-dynamic";
 
 export default async function EstoquePage() {
   await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
 
-  const parts = await prisma.part.findMany({
-    include: { supplier: { select: { nome: true } } },
-    orderBy: { nome: "asc" },
-  });
+  const [parts, paradas] = await Promise.all([
+    prisma.part.findMany({
+      include: { supplier: { select: { nome: true } } },
+      orderBy: { nome: "asc" },
+    }),
+    getPecasParadas(),
+  ]);
 
   const pecas: PecaRow[] = parts.map((p) => ({
     id: p.id,
@@ -78,7 +83,7 @@ export default async function EstoquePage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Peças cadastradas"
           value={formatNumber(pecas.length)}
@@ -98,6 +103,13 @@ export default async function EstoquePage() {
           icon={DollarSign}
           tone="info"
           hint="Custo × quantidade"
+        />
+        <StatCard
+          label="Sem giro (+6 meses)"
+          value={formatNumber(paradas.pecas.length)}
+          icon={Hourglass}
+          tone={paradas.pecas.length > 0 ? "warning" : "success"}
+          hint={`${formatBRL(paradas.totalValorParado)} parados`}
         />
       </div>
 
@@ -150,6 +162,57 @@ export default async function EstoquePage() {
                     </span>
                     <Badge variant={p.quantidade === 0 ? "danger" : "warning"}>
                       {p.quantidade === 0 ? "Esgotado" : "Estoque baixo"}
+                    </Badge>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
+      )}
+
+      {paradas.pecas.length > 0 && (
+        <Card className="mb-6 border-warning/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-warning">
+              <Hourglass className="h-4 w-4" />
+              Sem giro há +6 meses
+            </CardTitle>
+            <p className="mt-1 text-xs text-muted">
+              Peças com estoque sem nenhuma saída nos últimos 6 meses —{" "}
+              {formatBRL(paradas.totalValorParado)} em capital parado.
+            </p>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <ul className="divide-y divide-border">
+              {paradas.pecas.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between gap-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <Link
+                      href={`/painel/estoque/${p.id}/editar`}
+                      className="font-medium text-foreground hover:text-accent"
+                    >
+                      {p.nome}
+                    </Link>
+                    <span className="ml-2 text-xs text-muted">{p.codigoInterno}</span>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {p.ultimaSaida
+                        ? `Última saída: ${formatDateBR(p.ultimaSaida)}`
+                        : "Nunca teve saída"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3 text-right">
+                    <div>
+                      <p className="text-xs text-muted">Qtd.</p>
+                      <p className="text-sm tabular-nums text-foreground">
+                        {formatNumber(p.quantidade)}
+                      </p>
+                    </div>
+                    <Badge variant="warning" className="tabular-nums">
+                      {formatBRL(p.valorParado)}
                     </Badge>
                   </div>
                 </li>

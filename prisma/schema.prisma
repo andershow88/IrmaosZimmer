@@ -143,6 +143,8 @@ model User {
   ativo           Boolean  @default(true)
   telefone        String?
   comissaoPercent Decimal? @default(0) @db.Decimal(5, 2)
+  // Capacidade diária do mecânico (horas/dia) — usada no cálculo de carga.
+  cargaHorariaDiaria Int   @default(8)
   filialId        String?
   filial          Filial?  @relation(fields: [filialId], references: [id], onDelete: SetNull)
 
@@ -178,6 +180,8 @@ model Customer {
   cidade      String?
   estado      String?
   cep         String?
+  // Aniversário do cliente (usado em avisos/lembretes de aniversário).
+  dataNascimento DateTime?
   observacoes String?    @db.Text
   lgpdConsent Boolean    @default(false)
   createdAt   DateTime   @default(now())
@@ -319,6 +323,8 @@ model ServiceOrder {
   valorPecas       Decimal      @default(0) @db.Decimal(10, 2)
   desconto         Decimal      @default(0) @db.Decimal(10, 2)
   total            Decimal      @default(0) @db.Decimal(10, 2)
+  // Soma dos tempos previstos (min) dos itens de serviço da OS.
+  tempoPrevistoMin Int          @default(0)
   obsInternas      String?      @db.Text
   obsCliente       String?      @db.Text
   trackingToken    String?      @unique
@@ -365,6 +371,8 @@ model ServiceOrderItem {
   precoUnitario  Decimal      @db.Decimal(10, 2)
   custoUnitario  Decimal?     @db.Decimal(10, 2)
   subtotal       Decimal      @db.Decimal(10, 2)
+  // Snapshot do tempo estimado do serviço (min) no momento em que o item foi adicionado.
+  tempoEstimadoMin Int?
 
   @@index([serviceOrderId])
   @@index([serviceId])

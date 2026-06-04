@@ -33,6 +33,7 @@ export default async function EditarClientePage({
       cep: true,
       observacoes: true,
       lgpdConsent: true,
+      dataNascimento: true,
     },
   });
 
@@ -68,6 +69,9 @@ export default async function EditarClientePage({
           cep: cliente.cep ?? "",
           observacoes: cliente.observacoes ?? "",
           lgpdConsent: cliente.lgpdConsent,
+          dataNascimento: cliente.dataNascimento
+            ? cliente.dataNascimento.toISOString().slice(0, 10)
+            : "",
         }}
       />
     </div>

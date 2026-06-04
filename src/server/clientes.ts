@@ -13,6 +13,15 @@ export type ActionResult =
 
 const onlyDigits = (v: string) => v.replace(/\D/g, "");
 
+/**
+ * Converte uma data "yyyy-MM-dd" (input date) para Date em meio-dia UTC,
+ * evitando que fuso horário "volte" um dia. Retorna null para valor ausente.
+ */
+function parseDataNascimento(v: string | null | undefined): Date | null {
+  if (!v) return null;
+  return new Date(`${v}T12:00:00.000Z`);
+}
+
 /** Normaliza string vazia para null (campos opcionais). */
 const optionalString = z
   .string()
@@ -45,6 +54,21 @@ const clienteSchema = z
     cidade: optionalString,
     estado: optionalString,
     cep: optionalString,
+    // Data de nascimento no formato "yyyy-MM-dd" (input date). Opcional.
+    dataNascimento: z.preprocess(
+      (v) => {
+        if (typeof v !== "string") return null;
+        const t = v.trim();
+        return t.length === 0 ? null : t;
+      },
+      z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Data de nascimento inválida.")
+        .refine((s) => !Number.isNaN(Date.parse(`${s}T00:00:00`)), {
+          message: "Data de nascimento inválida.",
+        })
+        .nullable()
+    ),
     observacoes: optionalString,
     lgpdConsent: z.boolean().optional().default(false),
   })
@@ -101,6 +125,7 @@ export async function createCliente(input: ClienteInput): Promise<ActionResult> 
       cidade: data.cidade ?? null,
       estado: data.estado ?? null,
       cep: data.cep ?? null,
+      dataNascimento: parseDataNascimento(data.dataNascimento),
       observacoes: data.observacoes ?? null,
       lgpdConsent: data.lgpdConsent ?? false,
     },
@@ -148,6 +173,7 @@ export async function updateCliente(
       cidade: data.cidade ?? null,
       estado: data.estado ?? null,
       cep: data.cep ?? null,
+      dataNascimento: parseDataNascimento(data.dataNascimento),
       observacoes: data.observacoes ?? null,
       lgpdConsent: data.lgpdConsent ?? false,
     },

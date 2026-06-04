@@ -493,3 +493,71 @@ export async function getFluxoCaixa(meses = 6): Promise<{
 
   return { series, totalEntradas, totalSaidas, saldo: totalEntradas - totalSaidas };
 }
+
+// ---------------------------------------------------------------------------
+// OS concluídas a faturar (saldo em aberto)
+// ---------------------------------------------------------------------------
+
+export type OSaFaturar = {
+  id: string;
+  numero: string;
+  cliente: string;
+  veiculo: string;
+  placa: string;
+  dataAbertura: string;
+  total: number;
+  pago: number;
+  saldo: number;
+};
+
+/**
+ * Ordens de serviço CONCLUÍDAS com saldo em aberto: total − soma dos
+ * pagamentos com status PAGO (valorPago). Inclui OS sem nenhum pagamento PAGO.
+ * Retorna apenas as OS que ainda têm valor a faturar, ordenadas pelo maior saldo.
+ */
+export async function getOSaFaturar(): Promise<{
+  ordens: OSaFaturar[];
+  totalSaldo: number;
+}> {
+  const ordens = await prisma.serviceOrder.findMany({
+    where: { status: "CONCLUIDA" },
+    orderBy: { dataAbertura: "asc" },
+    select: {
+      id: true,
+      numero: true,
+      dataAbertura: true,
+      total: true,
+      customer: { select: { nome: true } },
+      vehicle: { select: { marca: true, modelo: true, placa: true } },
+      payments: {
+        where: { status: "PAGO" },
+        select: { valorPago: true },
+      },
+    },
+  });
+
+  const lista: OSaFaturar[] = [];
+  for (const os of ordens) {
+    const total = Number(os.total);
+    const pago = os.payments.reduce((acc, p) => acc + Number(p.valorPago), 0);
+    const saldo = total - pago;
+    if (saldo <= 0) continue;
+
+    lista.push({
+      id: os.id,
+      numero: os.numero,
+      cliente: os.customer.nome,
+      veiculo: `${os.vehicle.marca} ${os.vehicle.modelo}`.trim(),
+      placa: os.vehicle.placa,
+      dataAbertura: os.dataAbertura.toISOString(),
+      total,
+      pago,
+      saldo,
+    });
+  }
+
+  lista.sort((a, b) => b.saldo - a.saldo);
+  const totalSaldo = lista.reduce((acc, o) => acc + o.saldo, 0);
+
+  return { ordens: lista, totalSaldo };
+}

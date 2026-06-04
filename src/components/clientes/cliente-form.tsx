@@ -25,6 +25,7 @@ export type ClienteFormValues = {
   telefone: string;
   whatsapp: string;
   email: string;
+  dataNascimento: string;
   endereco: string;
   cidade: string;
   estado: string;
@@ -40,6 +41,7 @@ const EMPTY: ClienteFormValues = {
   telefone: "",
   whatsapp: "",
   email: "",
+  dataNascimento: "",
   endereco: "",
   cidade: "",
   estado: "",
@@ -168,6 +170,7 @@ export function ClienteForm({
       telefone: values.telefone || null,
       whatsapp: values.whatsapp || null,
       email: values.email || null,
+      dataNascimento: values.dataNascimento || null,
       endereco: values.endereco || null,
       cidade: values.cidade || null,
       estado: values.estado || null,
@@ -295,7 +298,7 @@ export function ClienteForm({
                 placeholder="(00) 00000-0000"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
@@ -305,6 +308,18 @@ export function ClienteForm({
                 placeholder="cliente@email.com"
               />
               {errors.email && <FieldError msg={errors.email} />}
+            </div>
+            <div>
+              <Label htmlFor="dataNascimento">Data de nascimento</Label>
+              <Input
+                id="dataNascimento"
+                type="date"
+                value={values.dataNascimento}
+                onChange={(e) => set("dataNascimento", e.target.value)}
+              />
+              {errors.dataNascimento && (
+                <FieldError msg={errors.dataNascimento} />
+              )}
             </div>
           </div>
         </CardBody>

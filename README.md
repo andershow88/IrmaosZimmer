@@ -108,6 +108,72 @@ O sistema tem duas faces na mesma aplicação:
 
 ---
 
+## Gestão operacional
+
+Recursos voltados ao controle do dia a dia da oficina: produtividade da equipe,
+relacionamento com o cliente e saúde do faturamento e do estoque.
+
+### Apontamento de horas + alarme de tempo
+
+Na tela de uma **Ordem de Serviço** há a seção **Horas**, onde o mecânico inicia
+e para um **cronômetro** (apontamento) — também é possível lançar um período
+**manualmente** em minutos. Cada apontamento grava início, fim, duração e o
+mecânico responsável (modelo `TimeEntry`).
+
+A seção compara o **tempo previsto** (estimado pelos serviços da OS) com o
+**tempo executado** (somatório dos apontamentos, já incluindo o tempo decorrido
+dos cronômetros em andamento). Quando o executado ultrapassa o previsto, dispara
+um **alarme visual de tempo excedido**, ajudando a identificar OS que estouraram
+a estimativa.
+
+### Relatório de horas e gargalo
+
+Em **Relatórios**, o comparativo **horas disponíveis × executadas × vendidas por
+mecânico** mostra a produtividade da equipe em um período. A partir desses totais
+o sistema calcula **eficiência** e **ociosidade** e gera um **diagnóstico de
+gargalo** (leitura curta de onde o tempo está se perdendo), apoiando decisões de
+capacidade e precificação de mão de obra.
+
+### Avisos automáticos (revisão / execução / aniversário)
+
+A tela **Avisos** (item **Avisos** no menu lateral, rota `/painel/avisos`)
+concentra lembretes prontos para enviar ao cliente por **WhatsApp**:
+
+- **Aniversário** — clientes que fazem aniversário no mês corrente (a partir da
+  **data de nascimento** do cadastro).
+- **Revisão preventiva** — clientes cuja última OS **entregue** ocorreu há **6+
+  meses** sem retorno à oficina, sugerindo uma revisão.
+
+Os avisos são **gerados sem duplicar** (verificação por cliente + tipo no
+período) e podem ser disparados de duas formas:
+
+- **Manualmente**, pelo botão **“Gerar avisos agora”** na própria tela.
+- **Automaticamente**, pelo endpoint de cron **`/api/cron/reminders`** (aceita
+  `GET` e `POST`). Para uso em agendadores externos, proteja-o com a variável
+  **`CRON_SECRET`** (header `x-cron-secret` ou `Authorization: Bearer`); sem ela,
+  o endpoint exige uma sessão de usuário autenticado.
+
+Cada aviso oferece o **link de WhatsApp** com a mensagem pré-montada e a ação
+**“Marcar enviado”** para sair da fila pendente. Filtros por tipo facilitam a
+triagem.
+
+### OS a faturar
+
+Aba **OS a faturar** dentro de **Financeiro** (rota
+`/painel/financeiro/contas-a-faturar`): lista as **ordens de serviço concluídas
+com saldo em aberto** (total da OS menos pagamentos já pagos), com totais
+consolidados (saldo a faturar, já recebido) e atalhos para abrir a OS ou
+registrar o pagamento — fechando o ciclo entre serviço entregue e recebimento.
+
+### Giro de estoque
+
+Dentro de **Peças & Estoque**, o **giro de estoque** destaca as **peças paradas**
+— itens **sem nenhuma saída nos últimos 6 meses** (ou cadastrados há mais de 6
+meses sem saída) — para apoiar decisões de promoção, devolução ao fornecedor ou
+descontinuação, reduzindo capital imobilizado em prateleira.
+
+---
+
 ## AI Features
 
 A camada de IA (`src/lib/ai`) usa a OpenAI quando há `OPENAI_API_KEY`; **sem a
@@ -139,6 +205,7 @@ Copie `.env.example` para `.env` e ajuste:
 | `SMTP_USER`      | não         | Usuário SMTP (autenticação).                                    |
 | `SMTP_PASS`      | não         | Senha SMTP (autenticação).                                      |
 | `SMTP_FROM`      | não         | Remetente padrão dos e-mails.                                  |
+| `CRON_SECRET`    | não         | Segredo do endpoint `/api/cron/reminders` (avisos). Definido ⇒ exige header `x-cron-secret`/`Bearer`; vazio ⇒ exige sessão de usuário. |
 | `NODE_ENV`       | não         | `development` / `production`.                                   |
 
 > Nunca faça commit do `.env` (já está no `.gitignore`). Os arquivos enviados
@@ -219,7 +286,9 @@ Após `npm run db:seed`, a senha de **todos** os usuários é `zimmer123`:
 - [ ] Aplicação granular de permissões por papel em **todas** as rotas/ações.
 - [ ] Envio automatizado de mensagens (integração com API oficial do WhatsApp).
 - [ ] Storage durável de anexos (S3/Blob) para múltiplas instâncias.
-- [ ] Notificações no app e lembretes de manutenção preventiva por IA.
+- [x] Avisos de manutenção preventiva (revisão) e aniversário, com cron
+      (`/api/cron/reminders`) e envio assistido por WhatsApp.
+- [ ] Notificações no app em tempo real.
 - [ ] Testes de integração das Server Actions e cobertura E2E.
 
 ---

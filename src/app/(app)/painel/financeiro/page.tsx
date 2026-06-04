@@ -7,6 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
   Scale,
+  Receipt,
 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { formatBRL } from "@/lib/utils";
@@ -14,13 +15,13 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { ReportCard } from "@/components/relatorios/report-card";
 import { FluxoChart } from "@/components/financeiro/fluxo-chart";
-import { getFluxoCaixa } from "@/server/financeiro";
+import { getFluxoCaixa, getOSaFaturar } from "@/server/financeiro";
 import { calcularSaldoSessao } from "@/lib/financeiro-calc";
 
 export const dynamic = "force-dynamic";
 
 export default async function FinanceiroOverviewPage() {
-  const [pagaveis, recebiveis, sessaoAberta, fluxo] = await Promise.all([
+  const [pagaveis, recebiveis, sessaoAberta, fluxo, aFaturar] = await Promise.all([
     prisma.accountPayable.findMany({
       where: { pago: false },
       select: { valor: true },
@@ -34,6 +35,7 @@ export default async function FinanceiroOverviewPage() {
       include: { movements: { select: { tipo: true, valor: true } } },
     }),
     getFluxoCaixa(6),
+    getOSaFaturar(),
   ]);
 
   const totalAPagar = pagaveis.reduce((acc, c) => acc + Number(c.valor), 0);
@@ -77,7 +79,7 @@ export default async function FinanceiroOverviewPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Entradas (6 meses)"
           value={formatBRL(fluxo.totalEntradas)}
@@ -96,6 +98,15 @@ export default async function FinanceiroOverviewPage() {
           icon={Activity}
           tone={fluxo.saldo >= 0 ? "success" : "danger"}
         />
+        <Link href="/painel/financeiro/contas-a-faturar" className="block transition hover:opacity-90">
+          <StatCard
+            label="OS a faturar"
+            value={formatBRL(aFaturar.totalSaldo)}
+            icon={Receipt}
+            tone={aFaturar.ordens.length > 0 ? "warning" : "success"}
+            hint={`${aFaturar.ordens.length} OS concluída(s) com saldo`}
+          />
+        </Link>
       </div>
 
       <ReportCard
@@ -123,6 +134,12 @@ export default async function FinanceiroOverviewPage() {
           <Button variant="outline" size="sm">
             <ArrowDownCircle className="h-4 w-4" />
             Contas a receber
+          </Button>
+        </Link>
+        <Link href="/painel/financeiro/contas-a-faturar">
+          <Button variant="outline" size="sm">
+            <Receipt className="h-4 w-4" />
+            OS a faturar
           </Button>
         </Link>
         <Link href="/painel/financeiro/caixa">

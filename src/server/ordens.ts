@@ -62,6 +62,27 @@ export async function recalcularTotais(serviceOrderId: string): Promise<void> {
   });
 }
 
+/**
+ * Recalcula ServiceOrder.tempoPrevistoMin como a soma dos tempoEstimadoMin
+ * dos itens de SERVIÇO (multiplicado pela quantidade). Persiste na OS.
+ */
+export async function recalcularTempoPrevisto(serviceOrderId: string): Promise<void> {
+  const itens = await prisma.serviceOrderItem.findMany({
+    where: { serviceOrderId, tipo: "SERVICO" },
+    select: { tempoEstimadoMin: true, quantidade: true },
+  });
+
+  const tempoPrevistoMin = itens.reduce(
+    (acc, i) => acc + (i.tempoEstimadoMin ?? 0) * (i.quantidade ?? 1),
+    0
+  );
+
+  await prisma.serviceOrder.update({
+    where: { id: serviceOrderId },
+    data: { tempoPrevistoMin },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // createOS
 // ---------------------------------------------------------------------------
@@ -307,10 +328,13 @@ export async function addServicoItem(
       quantidade,
       precoUnitario,
       subtotal,
+      // Snapshot do tempo estimado do serviço no momento da adição.
+      tempoEstimadoMin: service.tempoEstimadoMin ?? null,
     },
   });
 
   await recalcularTotais(serviceOrderId);
+  await recalcularTempoPrevisto(serviceOrderId);
   revalidatePath(`${ROUTE}/${serviceOrderId}`);
   revalidatePath(ROUTE);
   return { ok: true };
@@ -440,6 +464,10 @@ export async function removeItem(
   }
 
   await recalcularTotais(serviceOrderId);
+  // Tempo previsto muda apenas quando o item removido é de serviço.
+  if (item.tipo === "SERVICO") {
+    await recalcularTempoPrevisto(serviceOrderId);
+  }
   revalidatePath(`${ROUTE}/${serviceOrderId}`);
   revalidatePath(ROUTE);
   return { ok: true };

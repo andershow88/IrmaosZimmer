@@ -34,6 +34,31 @@ function rotuloMesAno(d: Date): string {
   return `${MESES_ABREV[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
 }
 
+/** Início do dia (00:00) `dias` dias antes de hoje. */
+function inicioDiasAtras(dias: number): Date {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  d.setDate(d.getDate() - dias);
+  return d;
+}
+
+/** Conta dias úteis (segunda a sexta) entre `inicio` (incl.) e `fim` (incl.). */
+function contarDiasUteis(inicio: Date, fim: Date): number {
+  let dias = 0;
+  const cursor = new Date(
+    inicio.getFullYear(),
+    inicio.getMonth(),
+    inicio.getDate()
+  );
+  const limite = new Date(fim.getFullYear(), fim.getMonth(), fim.getDate());
+  while (cursor <= limite) {
+    const dow = cursor.getDay(); // 0 = domingo, 6 = sábado
+    if (dow !== 0 && dow !== 6) dias++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dias;
+}
+
 // ------------------------------------------------------------
 // Tipos de retorno (serializáveis para Client Components)
 // ------------------------------------------------------------
@@ -51,6 +76,33 @@ export type EstoqueBaixoItem = {
 };
 export type ProdutividadeMecanico = { nome: string; ordens: number };
 export type OrcamentoComparativo = { aprovados: number; rejeitados: number };
+
+/**
+ * Produtividade em horas (minutos) por mecânico no período:
+ * - disponiveis: capacidade (cargaHorariaDiaria * dias úteis * 60).
+ * - executadas: soma de TimeEntry.minutos no período.
+ * - vendidas: soma de tempoEstimadoMin dos itens de serviço das OS
+ *   concluídas/entregues atribuídas ao mecânico no período.
+ */
+export type ProdutividadeHoras = {
+  nome: string;
+  disponiveis: number;
+  executadas: number;
+  vendidas: number;
+};
+
+/** Leitura agregada de gargalo a partir das métricas de horas. */
+export type GargaloHoras = {
+  /** Eficiência = vendidas / executadas (proporção). */
+  eficiencia: number;
+  /** Ociosidade = (disponíveis - executadas) / disponíveis (proporção). */
+  ociosidade: number;
+  totalDisponiveis: number;
+  totalExecutadas: number;
+  totalVendidas: number;
+  /** Texto curto em pt-BR explicando onde está a falha. */
+  diagnostico: string;
+};
 
 /** Margem agregada por mês (receita de mão de obra + peças - custo das peças). */
 export type MargemMensal = {
@@ -84,6 +136,9 @@ export type RelatoriosData = {
   margemPorMes: MargemMensal[];
   margemTotalPeriodo: number;
   comissaoMecanicos: ComissaoMecanico[];
+  produtividadeHoras: ProdutividadeHoras[];
+  produtividadeHorasDias: number;
+  gargaloHoras: GargaloHoras | null;
 };
 
 const STATUS_OS_LABELS: Record<string, string> = {
@@ -442,8 +497,153 @@ export async function getComissaoMecanicos(limite = 10): Promise<ComissaoMecanic
 }
 
 // ------------------------------------------------------------
+// Produtividade em horas: disponíveis x executadas x vendidas
+// Período em dias (default 30). Só mecânicos (role MECANICO).
+// DISPONÍVEIS = cargaHorariaDiaria(h) * dias úteis(seg-sex) * 60.
+// EXECUTADAS  = Σ TimeEntry.minutos no período.
+// VENDIDAS    = Σ tempoEstimadoMin dos itens SERVICO das OS
+//               concluídas/entregues atribuídas ao mecânico no período.
+// ------------------------------------------------------------
+
+export async function getProdutividadeHoras(dias = 30): Promise<{
+  porMecanico: ProdutividadeHoras[];
+  gargalo: GargaloHoras | null;
+}> {
+  const inicio = inicioDiasAtras(dias);
+  const fim = new Date();
+  const diasUteis = contarDiasUteis(inicio, fim);
+
+  // Mecânicos ativos — aparecem mesmo sem atividade no período.
+  const mecanicos = await prisma.user.findMany({
+    where: { role: "MECANICO", ativo: true },
+    select: { id: true, name: true, cargaHorariaDiaria: true },
+    orderBy: { name: "asc" },
+  });
+
+  if (mecanicos.length === 0) {
+    return { porMecanico: [], gargalo: null };
+  }
+
+  const ids = mecanicos.map((m) => m.id);
+
+  const [tempos, itensServico] = await Promise.all([
+    // Horas executadas: TimeEntry com início no período.
+    prisma.timeEntry.groupBy({
+      by: ["userId"],
+      where: { userId: { in: ids }, inicio: { gte: inicio } },
+      _sum: { minutos: true },
+    }),
+    // Horas vendidas: itens de serviço das OS concluídas/entregues do mecânico.
+    prisma.serviceOrderItem.findMany({
+      where: {
+        tipo: "SERVICO",
+        tempoEstimadoMin: { not: null },
+        serviceOrder: {
+          mecanicoId: { in: ids },
+          status: { in: ["CONCLUIDA", "ENTREGUE"] },
+          dataAbertura: { gte: inicio },
+        },
+      },
+      select: {
+        tempoEstimadoMin: true,
+        serviceOrder: { select: { mecanicoId: true } },
+      },
+    }),
+  ]);
+
+  const executadasPorId = new Map<string, number>();
+  for (const t of tempos) {
+    executadasPorId.set(t.userId, t._sum.minutos ?? 0);
+  }
+
+  const vendidasPorId = new Map<string, number>();
+  for (const item of itensServico) {
+    const mid = item.serviceOrder.mecanicoId;
+    if (!mid) continue;
+    vendidasPorId.set(
+      mid,
+      (vendidasPorId.get(mid) ?? 0) + (item.tempoEstimadoMin ?? 0)
+    );
+  }
+
+  const porMecanico: ProdutividadeHoras[] = mecanicos.map((m) => ({
+    nome: m.name,
+    disponiveis: m.cargaHorariaDiaria * diasUteis * 60,
+    executadas: executadasPorId.get(m.id) ?? 0,
+    vendidas: vendidasPorId.get(m.id) ?? 0,
+  }));
+
+  const totalDisponiveis = porMecanico.reduce((a, m) => a + m.disponiveis, 0);
+  const totalExecutadas = porMecanico.reduce((a, m) => a + m.executadas, 0);
+  const totalVendidas = porMecanico.reduce((a, m) => a + m.vendidas, 0);
+
+  const eficiencia = totalExecutadas > 0 ? totalVendidas / totalExecutadas : 0;
+  const ociosidade =
+    totalDisponiveis > 0
+      ? Math.max(0, (totalDisponiveis - totalExecutadas) / totalDisponiveis)
+      : 0;
+
+  const diagnostico = montarDiagnosticoGargalo({
+    totalDisponiveis,
+    totalExecutadas,
+    totalVendidas,
+    eficiencia,
+    ociosidade,
+  });
+
+  return {
+    porMecanico,
+    gargalo: {
+      eficiencia,
+      ociosidade,
+      totalDisponiveis,
+      totalExecutadas,
+      totalVendidas,
+      diagnostico,
+    },
+  };
+}
+
+/** Gera um texto curto (pt-BR) indicando onde está o principal gargalo. */
+function montarDiagnosticoGargalo(m: {
+  totalDisponiveis: number;
+  totalExecutadas: number;
+  totalVendidas: number;
+  eficiencia: number;
+  ociosidade: number;
+}): string {
+  if (m.totalDisponiveis === 0) {
+    return "Sem capacidade cadastrada para os mecânicos no período.";
+  }
+  if (m.totalExecutadas === 0) {
+    return "Nenhuma hora foi apontada no período: registre os tempos de execução para medir a produtividade.";
+  }
+
+  const efPct = Math.round(m.eficiencia * 100);
+  const ocPct = Math.round(m.ociosidade * 100);
+
+  // Ociosidade alta = tempo disponível mal aproveitado (gargalo na ocupação).
+  // Eficiência baixa = executa mais do que vende (gargalo na execução/orçamento).
+  const ociosidadeAlta = m.ociosidade >= 0.25;
+  const eficienciaBaixa = m.eficiencia < 0.85;
+
+  if (ociosidadeAlta && eficienciaBaixa) {
+    return `Gargalo duplo: ociosidade de ${ocPct}% (capacidade subutilizada) e eficiência de apenas ${efPct}% (executa mais do que vende). Reveja a ocupação e o tempo estimado dos serviços.`;
+  }
+  if (ociosidadeAlta) {
+    return `Principal gargalo: ociosidade de ${ocPct}% — boa parte das horas disponíveis não é apontada em execução. Foco em ocupar melhor a equipe.`;
+  }
+  if (eficienciaBaixa) {
+    return `Principal gargalo: eficiência de ${efPct}% — os serviços levam mais tempo do que o vendido/estimado. Revise os tempos estimados ou a produtividade na execução.`;
+  }
+  return `Operação saudável: eficiência de ${efPct}% e ociosidade de ${ocPct}%. Capacidade bem aproveitada e execução alinhada ao vendido.`;
+}
+
+// ------------------------------------------------------------
 // Agregador único usado pela página
 // ------------------------------------------------------------
+
+const PRODUTIVIDADE_HORAS_DIAS = 30;
 
 export async function getRelatoriosData(meses = 6): Promise<RelatoriosData> {
   const [
@@ -458,6 +658,7 @@ export async function getRelatoriosData(meses = 6): Promise<RelatoriosData> {
     orcamentos,
     margem,
     comissaoMecanicos,
+    produtividadeHoras,
   ] = await Promise.all([
     getReceitaPorMes(meses),
     getOsPorStatus(),
@@ -470,6 +671,7 @@ export async function getRelatoriosData(meses = 6): Promise<RelatoriosData> {
     getOrcamentosComparativo(),
     getMargemPorMes(meses),
     getComissaoMecanicos(),
+    getProdutividadeHoras(PRODUTIVIDADE_HORAS_DIAS),
   ]);
 
   return {
@@ -487,5 +689,8 @@ export async function getRelatoriosData(meses = 6): Promise<RelatoriosData> {
     margemPorMes: margem.series,
     margemTotalPeriodo: margem.total,
     comissaoMecanicos,
+    produtividadeHoras: produtividadeHoras.porMecanico,
+    produtividadeHorasDias: PRODUTIVIDADE_HORAS_DIAS,
+    gargaloHoras: produtividadeHoras.gargalo,
   };
 }
