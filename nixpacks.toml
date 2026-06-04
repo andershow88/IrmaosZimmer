@@ -2,7 +2,10 @@
 nixPkgs = ["nodejs_22", "openssl"]
 
 [phases.install]
-cmds = ["npm ci --include=dev"]
+# npm install (em vez de npm ci): resolve dependências opcionais por plataforma
+# (ex.: @emnapi/* p/ sharp no Linux) e não falha por lock-drift cross-platform.
+# --include=dev é necessário porque NODE_ENV=production faria o npm omitir devDeps.
+cmds = ["npm install --include=dev --no-audit --no-fund"]
 
 [phases.build]
 cmds = ["npm run build"]
