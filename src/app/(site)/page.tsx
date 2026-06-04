@@ -82,7 +82,8 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(40rem_30rem_at_85%_-10%,rgba(255,255,255,0.18),transparent_60%)]" />
 
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <div className="max-w-2xl">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
               <Clock4 className="h-3.5 w-3.5" />
               Mais de 35 anos de tradição
@@ -119,6 +120,15 @@ export default function HomePage() {
                 Conheça os serviços
                 <ArrowRight className="h-4 w-4" />
               </Link>
+            </div>
+            </div>
+
+            <div className="relative">
+              <img
+                src="/fotos/foto-1.png"
+                alt="Fachada da Mecânica Irmãos Zimmer em Santa Maria do Herval (RS)"
+                className="aspect-[16/10] w-full rounded-2xl object-cover shadow-2xl ring-1 ring-white/25"
+              />
             </div>
           </div>
         </div>

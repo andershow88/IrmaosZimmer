@@ -12,6 +12,7 @@ import {
   Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FotoCarousel } from "@/components/site/foto-carousel";
 import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -96,8 +97,8 @@ export default function SobrePage() {
 
       {/* INTRODUÇÃO + DESTAQUE +35 ANOS */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-        <div className="grid gap-10 md:grid-cols-3 md:items-center">
-          <div className="prose-zimmer md:col-span-2">
+        <div className="grid items-center gap-10 lg:grid-cols-2">
+          <div className="prose-zimmer">
             <p className="text-lg leading-relaxed text-foreground">
               A <strong>Irmãos Zimmer LTDA</strong> nasceu em 1988, fruto do
               trabalho e da visão dos irmãos Marcelino, Paulo e Marino Zimmer.
@@ -112,14 +113,23 @@ export default function SobrePage() {
               autopeças e acessórios. Hoje, a Irmãos Zimmer é uma oficina completa,
               preparada para cuidar do seu veículo do início ao fim.
             </p>
+
+            <div className="mt-6 inline-flex items-center gap-3 rounded-2xl bg-gradient-to-br from-accent-deep to-accent-2 px-5 py-3 text-white shadow-md shadow-accent/20">
+              <span className="text-3xl font-extrabold leading-none">+35</span>
+              <span className="text-xs font-medium uppercase leading-tight tracking-wide text-white/90">
+                anos de
+                <br />
+                tradição
+              </span>
+            </div>
           </div>
 
-          <div className="rounded-3xl border border-border bg-gradient-to-br from-accent-deep to-accent-2 p-8 text-center text-white shadow-md shadow-accent/20">
-            <p className="text-5xl font-extrabold leading-none">+35</p>
-            <p className="mt-2 text-sm font-medium uppercase tracking-wide text-white/90">
-              anos de tradição
-            </p>
-          </div>
+          <FotoCarousel
+            images={[
+              { src: "/fotos/foto-2-1.png", caption: "Os irmãos Zimmer", alt: "Os irmãos Zimmer na oficina" },
+              { src: "/fotos/foto-2-2.png", caption: "Nossa equipe", alt: "Equipe da Irmãos Zimmer com a bandeira da empresa" },
+            ]}
+          />
         </div>
       </section>
 
