@@ -18,7 +18,7 @@ export default function ServicosPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/70">
+      <section className="relative isolate overflow-hidden border-b border-border/70">
         <div
           className="absolute inset-0 -z-10 bg-gradient-to-br from-accent-deep via-accent-2 to-accent-2 opacity-90"
           aria-hidden="true"
@@ -159,7 +159,7 @@ export default function ServicosPage() {
 
       {/* CTA final */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <Card className="relative overflow-hidden border-0 p-8 sm:p-12">
+        <Card className="relative isolate overflow-hidden border-0 p-8 sm:p-12">
           <div
             className="absolute inset-0 -z-10 bg-gradient-to-br from-accent-deep via-accent-2 to-accent-2"
             aria-hidden="true"
