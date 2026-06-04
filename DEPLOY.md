@@ -35,12 +35,13 @@ Guia para publicar o ZimmerOS AI (site público + painel interno) na [Railway](h
 4. A Railway faz o build e o start. O `prisma db push` cria todas as tabelas no primeiro boot.
 5. Gere um domínio: serviço → **Settings → Networking → Generate Domain**.
 
-### 5. Popular dados de demonstração (uma única vez)
-O seed é **destrutivo** (recria os dados) — rode **só uma vez** logo após o primeiro deploy, e **nunca** em produção com dados reais:
+### 5. Dados iniciais (automático)
+O start roda `npm run db:seed` automaticamente, mas o seed é **idempotente**: só popula se o banco estiver **vazio** (não apaga nem duplica em deploys seguintes). Um ambiente novo já nasce com o admin + dados de demonstração — e o seed nunca sobrescreve dados existentes (ex.: senha de admin trocada).
+
+Para **recriar do zero** (apaga tudo e repopula) — destrutivo, use com cuidado:
 
 ```bash
-# via Railway CLI, com o projeto linkado:
-railway run npm run db:seed
+SEED_FORCE=1 npm run db:seed
 ```
 
 Login de demonstração após o seed: `admin@zimmer.com` / `zimmer123` (e atendente@/mecanico@/financeiro@/estoque@, todos `zimmer123`). **Troque as senhas em produção.**

@@ -29,6 +29,14 @@ function gerarNumero(prefixo: string, seq: number): string {
 // ---------- Execução ----------
 
 async function main() {
+  // Idempotente: se já houver usuários, não faz nada (não apaga, não duplica).
+  // Assim é seguro rodar a cada deploy. Use SEED_FORCE=1 para recriar do zero.
+  const jaPopulado = (await prisma.user.count()) > 0;
+  if (jaPopulado && process.env.SEED_FORCE !== "1") {
+    console.log("✔ Banco já populado — seed idempotente, nada a fazer (use SEED_FORCE=1 para recriar).");
+    return;
+  }
+
   console.log("🧹 Limpando dados antigos…");
   // Ordem respeita as dependências (filhos antes dos pais).
   await prisma.aiInteraction.deleteMany();

@@ -11,5 +11,6 @@ cmds = ["npm install --include=dev --no-audit --no-fund"]
 cmds = ["npm run build"]
 
 [start]
-# Sincroniza o schema no banco (Railway Postgres) e sobe o servidor na porta $PORT.
-cmd = "npx prisma db push && npm run start"
+# Sincroniza o schema, popula só se o banco estiver vazio (seed idempotente,
+# não-fatal) e sobe o servidor na porta $PORT.
+cmd = "npx prisma db push && (npm run db:seed || echo 'seed pulado') && npm run start"
