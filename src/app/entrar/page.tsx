@@ -28,15 +28,6 @@ export default async function EntrarPage() {
         </div>
 
         <LoginForm />
-
-        <div className="rounded-xl border border-border bg-surface/50 px-4 py-3 text-center">
-          <p className="text-xs font-medium text-foreground">Acesso de demonstração</p>
-          <p className="mt-1 text-xs text-muted">
-            E-mail: <span className="font-semibold text-foreground">admin@zimmer.com</span>
-            <br />
-            Senha: <span className="font-semibold text-foreground">zimmer123</span>
-          </p>
-        </div>
       </div>
     </div>
   );
