@@ -9,6 +9,7 @@ import { ACCESSORIES } from "@/components/site/site-data";
 
 export const metadata: Metadata = {
   title: "Acessórios",
+  alternates: { canonical: "/acessorios" },
   description:
     "Instalação de acessórios automotivos na Irmãos Zimmer: alarme, insulfilm, sensor de estacionamento, som, travas e vidros elétricos. Mais conforto e segurança para o seu veículo.",
 };

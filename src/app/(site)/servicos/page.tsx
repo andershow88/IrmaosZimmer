@@ -10,6 +10,7 @@ import { SERVICE_CATEGORIES, PARTNERS, EMPRESA } from "@/components/site/site-da
 
 export const metadata: Metadata = {
   title: "Serviços",
+  alternates: { canonical: "/servicos" },
   description:
     "Conheça os serviços da Irmãos Zimmer: mecânica geral, eletrônica embarcada, serviços rápidos, geometria, chapeação, autopeças e acessórios. Oficina completa em Santa Maria do Herval (RS).",
 };

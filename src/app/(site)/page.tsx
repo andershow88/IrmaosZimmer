@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { oficinaJsonLd } from "@/lib/site-meta";
 
 const SERVICOS = [
   {
@@ -76,13 +77,19 @@ const DIFERENCIAIS = [
 export default function HomePage() {
   return (
     <>
+      {/* SEO: dados estruturados da oficina (schema.org/AutoRepair) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(oficinaJsonLd()) }}
+      />
+
       {/* HERO */}
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-accent-deep via-accent-2 to-accent-2" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(40rem_30rem_at_85%_-10%,rgba(255,255,255,0.18),transparent_60%)]" />
 
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-28">
+          <div className="grid items-center gap-8 sm:gap-10 lg:grid-cols-2">
             <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
               <Clock4 className="h-3.5 w-3.5" />

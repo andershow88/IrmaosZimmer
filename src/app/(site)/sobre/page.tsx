@@ -17,6 +17,7 @@ import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "A Empresa",
+  alternates: { canonical: "/sobre" },
   description:
     "Conheça a história da Irmãos Zimmer LTDA: fundada em 1988 em Santa Maria do Herval (RS), mais de 35 anos de tradição em oficina mecânica completa.",
 };

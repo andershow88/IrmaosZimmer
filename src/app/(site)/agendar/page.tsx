@@ -5,6 +5,7 @@ import { getConfigAgenda } from "@/server/agenda-disponibilidade";
 
 export const metadata: Metadata = {
   title: "Agendar horário",
+  alternates: { canonical: "/agendar" },
   description:
     "Solicite o agendamento do seu atendimento na oficina Irmãos Zimmer. Preencha o formulário e a nossa equipe entra em contato para confirmar.",
 };

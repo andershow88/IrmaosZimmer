@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { waLink } from "@/lib/whatsapp";
+import { oficinaJsonLd, breadcrumbJsonLd } from "@/lib/site-meta";
 import { buttonVariants } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
   title: "Contato e Localização · Irmãos Zimmer",
   description:
     "Fale com a oficina Irmãos Zimmer em Santa Maria do Herval (RS). Endereço, telefone, WhatsApp, horários e mapa de como chegar.",
+  alternates: { canonical: "/contato" },
 };
 
 // Endereço real da oficina (fallback caso WorkshopSettings esteja vazio).
@@ -71,8 +73,22 @@ export default async function ContatoPage() {
       )
     : null;
 
+  const jsonLd = oficinaJsonLd({ telephone: telefone, email });
+  const breadcrumb = breadcrumbJsonLd([
+    { name: "Início", path: "/" },
+    { name: "Contato", path: "/contato" },
+  ]);
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+      />
       {/* Cabeçalho da página */}
       <header className="mb-10 max-w-2xl">
         <span className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
