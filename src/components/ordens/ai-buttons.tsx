@@ -1,17 +1,24 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Sparkles, MessageCircle, X } from "lucide-react";
+import { Sparkles, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MarkdownResult } from "@/components/ui/markdown-result";
 import { resumirOSComIA } from "@/server/ordens";
 
 export function AiButtons({
   serviceOrderId,
   whatsappUrl,
+  aiModel,
+  aiDemo,
 }: {
   serviceOrderId: string;
   /** Link wa.me já montado (veículo pronto). null se não houver telefone. */
   whatsappUrl: string | null;
+  /** Modelo de IA configurado (para o badge). */
+  aiModel?: string;
+  /** true quando a IA está em modo demonstração (sem chave). */
+  aiDemo?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [resumo, setResumo] = useState<string | null>(null);
@@ -60,21 +67,15 @@ export function AiButtons({
       {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
       {resumo && (
-        <div className="relative rounded-xl border border-border bg-surface/40 p-4">
-          <button
-            type="button"
-            onClick={() => setResumo(null)}
-            className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg text-muted hover:bg-surface hover:text-foreground transition cursor-pointer"
-            aria-label="Fechar resumo"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Sparkles className="h-4 w-4 text-accent" />
-            Resumo gerado por IA
-          </div>
-          <p className="whitespace-pre-wrap text-sm text-foreground/90">{resumo}</p>
-        </div>
+        <MarkdownResult
+          content={resumo}
+          label="Resumo gerado por IA"
+          model={aiModel}
+          demo={aiDemo}
+          pending={pending}
+          onRegenerate={gerarResumo}
+          onClose={() => setResumo(null)}
+        />
       )}
     </div>
   );

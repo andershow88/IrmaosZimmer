@@ -1,34 +1,29 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Sparkles, Copy, Check } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MarkdownResult } from "@/components/ui/markdown-result";
 
 export function ExplicarIA({
   onExplicar,
+  aiModel,
+  aiDemo,
 }: {
   onExplicar: () => Promise<string>;
+  /** Modelo de IA configurado (para o badge). */
+  aiModel?: string;
+  /** true quando a IA está em modo demonstração (sem chave). */
+  aiDemo?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [texto, setTexto] = useState<string | null>(null);
-  const [copiado, setCopiado] = useState(false);
 
   function gerar() {
     startTransition(async () => {
       const out = await onExplicar();
       setTexto(out);
     });
-  }
-
-  async function copiar() {
-    if (!texto) return;
-    try {
-      await navigator.clipboard.writeText(texto);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2000);
-    } catch {
-      // ignore
-    }
   }
 
   return (
@@ -40,27 +35,19 @@ export function ExplicarIA({
         onClick={gerar}
         disabled={pending}
       >
-        <Sparkles className="h-4 w-4" />
+        <Sparkles className="h-4 w-4" aria-hidden="true" />
         {pending ? "Gerando..." : "Explicar com IA"}
       </Button>
 
       {texto && (
-        <div className="rounded-xl border border-border bg-surface/40 p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Explicação para o cliente
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={copiar}>
-              {copiado ? (
-                <Check className="h-3.5 w-3.5 text-success" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-              {copiado ? "Copiado" : "Copiar"}
-            </Button>
-          </div>
-          <p className="whitespace-pre-wrap text-sm text-foreground">{texto}</p>
-        </div>
+        <MarkdownResult
+          content={texto}
+          label="Explicação para o cliente"
+          model={aiModel}
+          demo={aiDemo}
+          pending={pending}
+          onRegenerate={gerar}
+        />
       )}
     </div>
   );

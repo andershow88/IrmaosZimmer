@@ -25,6 +25,7 @@ import { formatDateTimeBR } from "@/lib/utils";
 import { ItemEditor } from "@/components/checklists/item-editor";
 import { ResumoIA } from "@/components/checklists/resumo-ia";
 import type { StatusItem } from "@/components/checklists/constants";
+import { getModel, isAIAvailable } from "@/lib/ai/client";
 
 export const dynamic = "force-dynamic";
 
@@ -187,7 +188,12 @@ export default async function InspecaoDetailPage({
               <CardTitle>Resumo com IA</CardTitle>
             </CardHeader>
             <CardBody>
-              <ResumoIA inspectionId={inspecao.id} resumo={inspecao.resumoIA} />
+              <ResumoIA
+                inspectionId={inspecao.id}
+                resumo={inspecao.resumoIA}
+                aiModel={getModel()}
+                aiDemo={!isAIAvailable()}
+              />
             </CardBody>
           </Card>
         </div>

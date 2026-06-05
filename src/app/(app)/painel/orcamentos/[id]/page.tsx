@@ -11,6 +11,7 @@ import { getOrcamento } from "@/components/orcamentos/get-orcamento";
 import { ItensTable } from "@/components/orcamentos/itens-table";
 import { OrcamentoActions } from "@/components/orcamentos/orcamento-actions";
 import { ExplicarIAWrapper } from "@/components/orcamentos/explicar-ia-wrapper";
+import { getModel, isAIAvailable } from "@/lib/ai/client";
 
 export const dynamic = "force-dynamic";
 
@@ -154,7 +155,11 @@ export default async function OrcamentoDetalhePage({
               <CardTitle>Assistente</CardTitle>
             </CardHeader>
             <CardBody>
-              <ExplicarIAWrapper quoteId={orcamento.id} />
+              <ExplicarIAWrapper
+                quoteId={orcamento.id}
+                aiModel={getModel()}
+                aiDemo={!isAIAvailable()}
+              />
             </CardBody>
           </Card>
         </div>

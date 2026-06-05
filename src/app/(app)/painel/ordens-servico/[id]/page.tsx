@@ -32,6 +32,7 @@ import { CamposForm } from "@/components/ordens/campos-form";
 import { ItemAdd } from "@/components/ordens/item-add";
 import { ItemList } from "@/components/ordens/item-list";
 import { AiButtons } from "@/components/ordens/ai-buttons";
+import { getModel, isAIAvailable } from "@/lib/ai/client";
 import { MecanicoSelect } from "@/components/ordens/mecanico-select";
 import { GarantiaForm } from "@/components/garantias/garantia-form";
 import { GarantiasList } from "@/components/garantias/garantias-list";
@@ -462,7 +463,12 @@ export default async function OSDetailPage({
         <CardTitle>Comunicação e assistente</CardTitle>
       </CardHeader>
       <CardBody>
-        <AiButtons serviceOrderId={os.id} whatsappUrl={whatsappUrl} />
+        <AiButtons
+          serviceOrderId={os.id}
+          whatsappUrl={whatsappUrl}
+          aiModel={getModel()}
+          aiDemo={!isAIAvailable()}
+        />
       </CardBody>
     </Card>
   );

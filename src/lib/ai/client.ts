@@ -16,7 +16,11 @@ export function isAIAvailable(): boolean {
   return !!process.env.OPENAI_API_KEY;
 }
 
-/** Modelo configurado (OPENAI_MODEL) ou fallback. */
+/** Modelo padrão quando `OPENAI_MODEL` não está configurado. */
+const MODELO_PADRAO = "gpt-4o-mini";
+
+/** Modelo configurado (OPENAI_MODEL) ou fallback para um modelo válido. */
 export function getModel(): string {
-  return process.env.OPENAI_MODEL ?? "gpt-5.4-mini";
+  const configurado = process.env.OPENAI_MODEL?.trim();
+  return configurado && configurado.length > 0 ? configurado : MODELO_PADRAO;
 }
