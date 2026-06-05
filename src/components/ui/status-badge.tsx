@@ -7,7 +7,11 @@ export type StatusKind =
   | "orcamento"
   | "agendamento"
   | "pagamento"
-  | "inspecao";
+  | "inspecao"
+  | "servico"
+  | "estoque"
+  | "conta_pagar"
+  | "conta_receber";
 
 type StatusEntry = { label: string; variant: BadgeVariant };
 
@@ -55,13 +59,56 @@ const STATUS_INSPECAO: Record<string, StatusEntry> = {
   NAO_VERIFICADO: { label: "Não verificado", variant: "outline" },
 };
 
+const STATUS_SERVICO: Record<string, StatusEntry> = {
+  ATIVO: { label: "Ativo", variant: "success" },
+  INATIVO: { label: "Inativo", variant: "outline" },
+};
+
+/** Nível de estoque de uma peça (derivado de quantidade vs estoque mínimo). */
+const STATUS_ESTOQUE: Record<string, StatusEntry> = {
+  ZERADO: { label: "Esgotado", variant: "danger" },
+  BAIXO: { label: "Estoque baixo", variant: "warning" },
+  OK: { label: "Em estoque", variant: "success" },
+};
+
+/** Conta a pagar (a fornecedor): em aberto / paga / vencida. */
+const STATUS_CONTA_PAGAR: Record<string, StatusEntry> = {
+  EM_ABERTO: { label: "Em aberto", variant: "warning" },
+  PAGO: { label: "Pago", variant: "success" },
+  VENCIDO: { label: "Vencido", variant: "danger" },
+};
+
+/** Conta a receber (de cliente): em aberto / recebida / vencida. */
+const STATUS_CONTA_RECEBER: Record<string, StatusEntry> = {
+  EM_ABERTO: { label: "Em aberto", variant: "warning" },
+  RECEBIDO: { label: "Recebido", variant: "success" },
+  VENCIDO: { label: "Vencido", variant: "danger" },
+};
+
 const MAPS: Record<StatusKind, Record<string, StatusEntry>> = {
   os: STATUS_OS,
   orcamento: STATUS_ORCAMENTO,
   agendamento: STATUS_AGENDAMENTO,
   pagamento: STATUS_PAGAMENTO,
   inspecao: STATUS_INSPECAO,
+  servico: STATUS_SERVICO,
+  estoque: STATUS_ESTOQUE,
+  conta_pagar: STATUS_CONTA_PAGAR,
+  conta_receber: STATUS_CONTA_RECEBER,
 };
+
+/**
+ * Deriva o nível de estoque (ZERADO/BAIXO/OK) a partir da quantidade atual e do
+ * mínimo configurado — para uso direto com `<StatusBadge kind="estoque" ...>`.
+ */
+export function nivelEstoque(
+  quantidade: number,
+  estoqueMinimo: number
+): "ZERADO" | "BAIXO" | "OK" {
+  if (quantidade <= 0) return "ZERADO";
+  if (quantidade <= estoqueMinimo) return "BAIXO";
+  return "OK";
+}
 
 /** Resolve rótulo + variante de um status de domínio. */
 export function resolveStatus(kind: StatusKind, status: string): StatusEntry {

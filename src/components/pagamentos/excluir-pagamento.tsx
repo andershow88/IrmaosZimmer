@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
 import { deletePagamento } from "@/server/pagamentos";
 
 export function ExcluirPagamento({
@@ -21,10 +22,17 @@ export function ExcluirPagamento({
   function onConfirm() {
     startTransition(async () => {
       const res = await deletePagamento(id);
-      setOpen(false);
       if (res.ok) {
+        setOpen(false);
+        toast({ title: "Pagamento excluído", variant: "success" });
         if (redirectTo) router.push(redirectTo);
         router.refresh();
+      } else {
+        toast({
+          title: "Não foi possível excluir o pagamento",
+          description: res.error,
+          variant: "error",
+        });
       }
     });
   }

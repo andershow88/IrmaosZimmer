@@ -18,8 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { CurrencyField } from "@/components/ui/currency-field";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
 import { formatBRL, formatDateTimeBR } from "@/lib/utils";
 import {
   abrirCaixa,
@@ -75,8 +77,10 @@ export function AbrirCaixaCard() {
       const res: ActionResult = await abrirCaixa(form);
       if (!res.ok) {
         setError(res.error);
+        toast({ title: res.error, variant: "error" });
         return;
       }
+      toast({ title: "Caixa aberto", variant: "success" });
       router.refresh();
     });
   }
@@ -104,14 +108,10 @@ export function AbrirCaixaCard() {
             <Label htmlFor="valorAbertura" required>
               Valor de abertura (R$)
             </Label>
-            <Input
+            <CurrencyField
               id="valorAbertura"
               name="valorAbertura"
-              type="number"
-              step="0.01"
-              min="0"
-              inputMode="decimal"
-              defaultValue="0"
+              defaultValue={0}
               required
             />
           </div>
@@ -135,6 +135,9 @@ function MovimentoForm({ cashSessionId }: { cashSessionId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Remonta o CurrencyField (estado interno) após um lançamento bem-sucedido,
+  // já que form.reset() não limpa o input controlado por React.
+  const [valorKey, setValorKey] = useState(0);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -145,9 +148,12 @@ function MovimentoForm({ cashSessionId }: { cashSessionId: string }) {
       const res: ActionResult = await registrarMovimentoCaixa(form);
       if (!res.ok) {
         setError(res.error);
+        toast({ title: res.error, variant: "error" });
         return;
       }
+      toast({ title: "Movimento lançado", variant: "success" });
       formEl.reset();
+      setValorKey((k) => k + 1);
       router.refresh();
     });
   }
@@ -177,16 +183,7 @@ function MovimentoForm({ cashSessionId }: { cashSessionId: string }) {
           <Label htmlFor="mov-valor" required>
             Valor (R$)
           </Label>
-          <Input
-            id="mov-valor"
-            name="valor"
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            placeholder="0,00"
-            required
-          />
+          <CurrencyField key={valorKey} id="mov-valor" name="valor" required />
         </div>
         <div>
           <Label htmlFor="mov-forma">Forma</Label>
@@ -227,7 +224,12 @@ export function CaixaAbertaPanel({ sessao }: { sessao: SessaoAberta }) {
     startTransition(async () => {
       const res = await fecharCaixa(form);
       setConfirmarFechar(false);
-      if (res.ok) router.refresh();
+      if (res.ok) {
+        toast({ title: "Caixa fechado", variant: "success" });
+        router.refresh();
+        return;
+      }
+      toast({ title: res.error, variant: "error" });
     });
   }
 
@@ -235,9 +237,14 @@ export function CaixaAbertaPanel({ sessao }: { sessao: SessaoAberta }) {
     if (!confirmarExcluir) return;
     const id = confirmarExcluir.id;
     startTransition(async () => {
-      await excluirMovimentoCaixa(id);
-      setConfirmarExcluir(null);
-      router.refresh();
+      const res = await excluirMovimentoCaixa(id);
+      if (res.ok) {
+        toast({ title: "Movimento excluído", variant: "success" });
+        setConfirmarExcluir(null);
+        router.refresh();
+        return;
+      }
+      toast({ title: res.error, variant: "error" });
     });
   }
 

@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { DateField } from "@/components/ui/date-field";
+import { toast } from "@/components/ui/toast";
 import { formatBRL } from "@/lib/utils";
 import type { FormaPagamento, StatusPagamento } from "@prisma/client";
 import { FORMA_OPTIONS, deriveStatus, type ActionResult } from "./constants";
@@ -81,6 +83,10 @@ export function PagamentoForm({
         setError(res.error);
         return;
       }
+      toast({
+        title: initial ? "Pagamento atualizado" : "Pagamento registrado",
+        variant: "success",
+      });
       router.push(`/painel/pagamentos/${res.id}`);
       router.refresh();
     });
@@ -179,10 +185,9 @@ export function PagamentoForm({
 
             <div>
               <Label htmlFor="dataPagamento">Data do pagamento</Label>
-              <Input
+              <DateField
                 id="dataPagamento"
                 name="dataPagamento"
-                type="date"
                 defaultValue={initial?.dataPagamento ?? ""}
               />
             </div>

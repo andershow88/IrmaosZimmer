@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 
 type ExportTipo = {
   tipo: string;
@@ -27,6 +28,7 @@ export function ExportButton({ meses }: { meses: number }) {
     const url = `/api/relatorios/export?tipo=${encodeURIComponent(tipo)}&meses=${meses}`;
     // Abre a rota num iframe oculto não é necessário: navegar dispara o download.
     window.location.href = url;
+    toast({ title: "Exportação iniciada", variant: "success" });
   }
 
   return (

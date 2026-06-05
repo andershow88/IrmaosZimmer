@@ -25,11 +25,11 @@ export const CHART_PALETTE: string[] = [
   "#0284c7", // azul (mais escuro que #0ea5e9)
   "#ea8c00", // âmbar (mais escuro p/ contraste claro)
   "#dc2626", // vermelho
-  "#7c3aed", // roxo (mais escuro e saturado que #8b5cf6)
+  "#8b5cf6", // roxo (clareado p/ contraste no dark contra bg-elevated; era #7c3aed ~3.1:1)
   "#0d9488", // teal (mais escuro que #14b8a6 p/ contraste claro)
   "#db2777", // rosa (mais escuro que #ec4899)
-  "#005c2e", // verde profundo
-  "#475569", // ardósia (mais escuro que #64748b)
+  "#2e9e5b", // verde médio (era #005c2e, que falhava no dark ~2.2:1)
+  "#7c8aa0", // ardósia (clareada p/ contraste no dark; era #475569 ~2.3:1)
 ];
 
 export function colorAt(index: number): string {

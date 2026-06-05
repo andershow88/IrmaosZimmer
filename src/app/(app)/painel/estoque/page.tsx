@@ -17,17 +17,55 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge, nivelEstoque } from "@/components/ui/status-badge";
 import { PecasList, type PecaRow } from "@/components/estoque/pecas-list";
 import { getPecasParadas } from "@/server/estoque";
 
 export const dynamic = "force-dynamic";
 
-export default async function EstoquePage() {
+export default async function EstoquePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; categoria?: string }>;
+}) {
   await requirePageRole(["ESTOQUE", "ADMINISTRADOR"]);
 
-  const [parts, paradas] = await Promise.all([
+  const { q, categoria: categoriaParam } = await searchParams;
+  const termo = q?.trim() ?? "";
+  const categoriaFiltro = categoriaParam?.trim() ?? "";
+
+  // Lista de peças (filtrada por busca/categoria), métricas globais e categorias
+  // disponíveis são consultadas independentemente para que os cards e o filtro
+  // reflitam sempre o universo completo, não o recorte exibido na tabela.
+  const [parts, allParts, paradas] = await Promise.all([
     prisma.part.findMany({
+      where: {
+        AND: [
+          termo
+            ? {
+                OR: [
+                  { nome: { contains: termo, mode: "insensitive" } },
+                  { codigoInterno: { contains: termo, mode: "insensitive" } },
+                  { categoria: { contains: termo, mode: "insensitive" } },
+                ],
+              }
+            : {},
+          categoriaFiltro ? { categoria: categoriaFiltro } : {},
+        ],
+      },
       include: { supplier: { select: { nome: true } } },
+      orderBy: { nome: "asc" },
+    }),
+    prisma.part.findMany({
+      select: {
+        id: true,
+        nome: true,
+        codigoInterno: true,
+        categoria: true,
+        precoCusto: true,
+        quantidade: true,
+        estoqueMinimo: true,
+      },
       orderBy: { nome: "asc" },
     }),
     getPecasParadas(),
@@ -46,16 +84,24 @@ export default async function EstoquePage() {
     localizacao: p.localizacao,
   }));
 
+  const totalPecas = allParts.length;
+
   const categorias = Array.from(
-    new Set(pecas.map((p) => p.categoria).filter((c): c is string => Boolean(c)))
+    new Set(
+      allParts.map((p) => p.categoria).filter((c): c is string => Boolean(c))
+    )
   ).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
-  const alertas = pecas
+  // Alertas e valor em estoque consideram o universo completo (independem do recorte).
+  const alertas = allParts
     .filter((p) => p.quantidade <= p.estoqueMinimo)
-    .sort((a, b) => a.quantidade - a.estoqueMinimo - (b.quantidade - b.estoqueMinimo));
+    .sort(
+      (a, b) =>
+        a.quantidade - a.estoqueMinimo - (b.quantidade - b.estoqueMinimo)
+    );
 
-  const valorEstoque = pecas.reduce(
-    (acc, p) => acc + p.precoCusto * p.quantidade,
+  const valorEstoque = allParts.reduce(
+    (acc, p) => acc + Number(p.precoCusto) * p.quantidade,
     0
   );
 
@@ -86,7 +132,7 @@ export default async function EstoquePage() {
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Peças cadastradas"
-          value={formatNumber(pecas.length)}
+          value={formatNumber(totalPecas)}
           icon={Package}
           tone="accent"
         />
@@ -160,9 +206,10 @@ export default async function EstoquePage() {
                     <span className="text-xs text-muted">
                       / mín. {formatNumber(p.estoqueMinimo)}
                     </span>
-                    <Badge variant={p.quantidade === 0 ? "danger" : "warning"}>
-                      {p.quantidade === 0 ? "Esgotado" : "Estoque baixo"}
-                    </Badge>
+                    <StatusBadge
+                      kind="estoque"
+                      status={nivelEstoque(p.quantidade, p.estoqueMinimo)}
+                    />
                   </div>
                 </li>
               ))}
@@ -222,7 +269,12 @@ export default async function EstoquePage() {
         </Card>
       )}
 
-      <PecasList pecas={pecas} categorias={categorias} />
+      <PecasList
+        pecas={pecas}
+        categorias={categorias}
+        initialQuery={termo}
+        initialCategoria={categoriaFiltro}
+      />
     </div>
   );
 }

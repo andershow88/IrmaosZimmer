@@ -18,7 +18,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge, nivelEstoque } from "@/components/ui/status-badge";
 import { getRelatoriosData } from "@/server/relatorios";
 import { ReportCard } from "@/components/relatorios/report-card";
 import { ReceitaChart } from "@/components/relatorios/receita-chart";
@@ -296,26 +296,24 @@ export default async function RelatoriosPage({
                   </TR>
                 </THead>
                 <TBody>
-                  {data.estoqueBaixo.map((p) => {
-                    const zerado = p.quantidade <= 0;
-                    return (
-                      <TR key={p.id}>
-                        <TD className="font-medium">{p.nome}</TD>
-                        <TD className="text-muted">{p.codigoInterno}</TD>
-                        <TD className="text-right tabular-nums">
-                          {formatNumber(p.quantidade)}
-                        </TD>
-                        <TD className="text-right tabular-nums">
-                          {formatNumber(p.estoqueMinimo)}
-                        </TD>
-                        <TD className="text-right">
-                          <Badge variant={zerado ? "danger" : "warning"}>
-                            {zerado ? "Esgotado" : "Baixo"}
-                          </Badge>
-                        </TD>
-                      </TR>
-                    );
-                  })}
+                  {data.estoqueBaixo.map((p) => (
+                    <TR key={p.id}>
+                      <TD className="font-medium">{p.nome}</TD>
+                      <TD className="text-muted">{p.codigoInterno}</TD>
+                      <TD className="text-right tabular-nums">
+                        {formatNumber(p.quantidade)}
+                      </TD>
+                      <TD className="text-right tabular-nums">
+                        {formatNumber(p.estoqueMinimo)}
+                      </TD>
+                      <TD className="text-right">
+                        <StatusBadge
+                          kind="estoque"
+                          status={nivelEstoque(p.quantidade, p.estoqueMinimo)}
+                        />
+                      </TD>
+                    </TR>
+                  ))}
                 </TBody>
               </Table>
             ) : (
@@ -330,8 +328,6 @@ export default async function RelatoriosPage({
 
 function SemDadosGrafico({ texto }: { texto: string }) {
   return (
-    <div className="grid h-40 place-items-center rounded-xl border border-dashed border-border bg-surface/30">
-      <p className="text-sm text-muted">{texto}</p>
-    </div>
+    <EmptyState icon={BarChart3} title="Sem dados no período" message={texto} />
   );
 }

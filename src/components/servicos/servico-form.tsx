@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
   createServico,
@@ -52,10 +53,18 @@ export function ServicoForm({
 
   useEffect(() => {
     if (state.ok) {
+      toast({
+        title:
+          state.message ??
+          (mode === "edit"
+            ? "Serviço atualizado com sucesso."
+            : "Serviço cadastrado com sucesso."),
+        variant: "success",
+      });
       router.push("/painel/servicos");
       router.refresh();
     }
-  }, [state.ok, router]);
+  }, [state.ok, state.message, mode, router]);
 
   const err = state.errors ?? {};
 

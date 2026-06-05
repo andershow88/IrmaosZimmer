@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Building2, Loader2, Save, Search } from "lucide-react";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardBody } from "@/components/ui/card";
+import { toast } from "@/components/ui/toast";
 import { maskCPFCNPJ, maskTelefone } from "@/lib/masks";
 import type { DadosCNPJ } from "@/lib/lookups";
 import type { FornecedorActionState } from "@/server/fornecedores";
@@ -51,6 +52,14 @@ export function FornecedorForm({
   submitLabel?: string;
 }) {
   const [state, formAction] = useActionState(action, INITIAL_STATE);
+
+  // Em sucesso a action redireciona (state.ok dificilmente chega ao cliente);
+  // o erro de servidor já é exibido inline abaixo do formulário (sem toast duplicado).
+  useEffect(() => {
+    if (state.ok) {
+      toast({ title: "Fornecedor salvo", variant: "success" });
+    }
+  }, [state.ok]);
 
   const [cnpj, setCnpj] = useState(defaultValues?.cnpj ?? "");
   const [telefone, setTelefone] = useState(defaultValues?.telefone ?? "");

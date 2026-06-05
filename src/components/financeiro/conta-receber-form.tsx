@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { CurrencyField } from "@/components/ui/currency-field";
+import { DateField } from "@/components/ui/date-field";
+import { toast } from "@/components/ui/toast";
 import { formatBRL } from "@/lib/utils";
 import {
   criarContaReceber,
@@ -53,8 +56,13 @@ export function ContaReceberForm({
         : await criarContaReceber(form);
       if (!res.ok) {
         setError(res.error);
+        toast({ title: res.error, variant: "error" });
         return;
       }
+      toast({
+        title: initial ? "Conta a receber atualizada" : "Conta a receber criada",
+        variant: "success",
+      });
       router.refresh();
       onDone?.();
     });
@@ -114,15 +122,10 @@ export function ContaReceberForm({
           <Label htmlFor="cr-valor" required>
             Valor (R$)
           </Label>
-          <Input
+          <CurrencyField
             id="cr-valor"
             name="valor"
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            defaultValue={initial ? String(initial.valor) : ""}
-            placeholder="0,00"
+            defaultValue={initial ? initial.valor : null}
             required
           />
         </div>
@@ -130,10 +133,9 @@ export function ContaReceberForm({
           <Label htmlFor="cr-vencimento" required>
             Vencimento
           </Label>
-          <Input
+          <DateField
             id="cr-vencimento"
             name="vencimento"
-            type="date"
             defaultValue={initial?.vencimento ?? ""}
             required
           />

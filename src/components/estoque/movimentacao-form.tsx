@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
 import { formatNumber } from "@/lib/utils";
 import { registrarMovimentacao } from "@/server/estoque";
 
@@ -58,6 +59,7 @@ export function MovimentacaoForm({ pecas }: MovimentacaoFormProps) {
     startTransition(async () => {
       const result = await registrarMovimentacao(formData);
       if (result.ok) {
+        toast({ title: "Movimentação registrada", variant: "success" });
         setPartId("");
         setTipo("ENTRADA");
         setFormKey((k) => k + 1);

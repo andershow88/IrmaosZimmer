@@ -2,14 +2,14 @@ import Link from "next/link";
 import { CreditCard, Plus, Wallet, Clock, CircleDollarSign } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requirePageRole } from "@/lib/permissions-server";
-import { formatBRL, formatDateBR } from "@/lib/utils";
+import { formatBRL } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { PagamentosFiltros } from "@/components/pagamentos/pagamentos-filtros";
+import {
+  PagamentosTable,
+  type PagamentoRow,
+} from "@/components/pagamentos/pagamentos-table";
 import { FORMA_LABELS } from "@/components/pagamentos/constants";
 import type { FormaPagamento, StatusPagamento, Prisma } from "@prisma/client";
 
@@ -86,6 +86,26 @@ export default async function PagamentosPage({
     .reduce((acc, p) => acc + Number(p.valorPago), 0);
   const qtdAbertos = agregados.length;
 
+  const rows: PagamentoRow[] = pagamentos.map((p) => {
+    const valorTotal = Number(p.valorTotal);
+    const valorPago = Number(p.valorPago);
+    return {
+      id: p.id,
+      numero: p.serviceOrder.numero,
+      cliente: p.serviceOrder.customer.nome,
+      veiculo: p.serviceOrder.vehicle
+        ? `${p.serviceOrder.vehicle.marca} ${p.serviceOrder.vehicle.modelo}`
+        : "—",
+      placa: p.serviceOrder.vehicle?.placa ?? null,
+      valorTotal,
+      valorPago,
+      saldo: Math.max(valorTotal - valorPago, 0),
+      forma: p.forma,
+      status: p.status,
+      dataPagamento: p.dataPagamento ? p.dataPagamento.toISOString() : null,
+    };
+  });
+
   return (
     <div>
       <PageHeader
@@ -126,75 +146,7 @@ export default async function PagamentosPage({
         />
       </div>
 
-      <PagamentosFiltros />
-
-      {pagamentos.length === 0 ? (
-        <EmptyState
-          icon={CreditCard}
-          title="Nenhum pagamento encontrado"
-          message="Ajuste os filtros ou registre um novo pagamento para uma ordem de serviço."
-          action={
-            <Link href="/painel/pagamentos/novo">
-              <Button size="sm">
-                <Plus className="h-4 w-4" />
-                Novo pagamento
-              </Button>
-            </Link>
-          }
-        />
-      ) : (
-        <Table>
-          <THead>
-            <TR>
-              <TH>OS / Cliente</TH>
-              <TH>Veículo</TH>
-              <TH className="text-right">Valor total</TH>
-              <TH className="text-right">Valor pago</TH>
-              <TH className="text-right">Saldo</TH>
-              <TH>Forma</TH>
-              <TH>Status</TH>
-              <TH>Data</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {pagamentos.map((p) => {
-              const saldo = Math.max(Number(p.valorTotal) - Number(p.valorPago), 0);
-              const veiculo = p.serviceOrder.vehicle
-                ? `${p.serviceOrder.vehicle.marca} ${p.serviceOrder.vehicle.modelo}`
-                : "—";
-              return (
-                <TR key={p.id}>
-                  <TD>
-                    <Link
-                      href={`/painel/pagamentos/${p.id}`}
-                      className="font-semibold text-foreground hover:text-accent"
-                    >
-                      {p.serviceOrder.numero}
-                    </Link>
-                    <p className="text-xs text-muted">{p.serviceOrder.customer.nome}</p>
-                  </TD>
-                  <TD>
-                    <span className="text-sm">{veiculo}</span>
-                    {p.serviceOrder.vehicle?.placa && (
-                      <p className="text-xs text-muted">{p.serviceOrder.vehicle.placa}</p>
-                    )}
-                  </TD>
-                  <TD className="text-right tabular-nums">{formatBRL(p.valorTotal)}</TD>
-                  <TD className="text-right tabular-nums">{formatBRL(p.valorPago)}</TD>
-                  <TD className="text-right tabular-nums font-medium">{formatBRL(saldo)}</TD>
-                  <TD className="text-sm">{FORMA_LABELS[p.forma]}</TD>
-                  <TD>
-                    <StatusBadge kind="pagamento" status={p.status} />
-                  </TD>
-                  <TD className="text-sm text-muted">
-                    {p.dataPagamento ? formatDateBR(p.dataPagamento) : "—"}
-                  </TD>
-                </TR>
-              );
-            })}
-          </TBody>
-        </Table>
-      )}
+      <PagamentosTable pagamentos={rows} initialQuery={q} />
     </div>
   );
 }

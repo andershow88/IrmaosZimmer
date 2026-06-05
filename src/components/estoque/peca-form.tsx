@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CurrencyField } from "@/components/ui/currency-field";
+import { toast } from "@/components/ui/toast";
 import { createPeca, updatePeca, type ActionResult } from "@/server/estoque";
 import { CATEGORIAS_PECA } from "./categorias";
 
@@ -71,6 +73,10 @@ export function PecaForm({ fornecedores, initial }: PecaFormProps) {
       }
 
       if (result.ok) {
+        toast({
+          title: isEdit ? "Peça atualizada" : "Peça cadastrada",
+          variant: "success",
+        });
         router.push("/painel/estoque");
         router.refresh();
       } else {
@@ -156,27 +162,21 @@ export function PecaForm({ fornecedores, initial }: PecaFormProps) {
 
             <div>
               <Label htmlFor="precoCusto">Preço de custo (R$)</Label>
-              <Input
+              <CurrencyField
                 id="precoCusto"
                 name="precoCusto"
-                type="number"
-                step="0.01"
-                min="0"
                 defaultValue={values.precoCusto}
-                placeholder="0,00"
+                required
               />
             </div>
 
             <div>
               <Label htmlFor="precoVenda">Preço de venda (R$)</Label>
-              <Input
+              <CurrencyField
                 id="precoVenda"
                 name="precoVenda"
-                type="number"
-                step="0.01"
-                min="0"
                 defaultValue={values.precoVenda}
-                placeholder="0,00"
+                required
               />
             </div>
 

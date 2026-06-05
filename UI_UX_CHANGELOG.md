@@ -249,25 +249,58 @@ Achados-chave verificados no código real: focus ring inconsistente
 
 ---
 
-## Fase 4 — Estoque, Pagamentos, Finanças, Fornecedores, Relatórios ⬜ Pendente
+## Fase 4 — Estoque, Serviços, Pagamentos, Finanças, Fornecedores, Relatórios ✅ Concluída (2026-06-05)
 
-### Telas alteradas
-- _(a preencher)_
+> Módulos de gestão/financeiro estendidos aos primitivos da Fase 2. Mapeamento +
+> implementação dos 6 módulos em paralelo (arquivos disjuntos) + **revisão adversarial**
+> (9 achados confirmados, todos corrigidos). Verificação: `tsc` limpo, `next build` limpo,
+> **smoke runtime** (dev :3972, cookie admin) — 12 rotas 200, busca server-side filtrando,
+> rótulos financeiros corretos.
 
-### Componentes reutilizados
-- _(a preencher)_
+### Novos primitivos (`src/components/ui/`)
+- **`currency-field.tsx`** — `CurrencyField`: exibe BRL "1.234,56" (prefixo R$) e **submete
+  decimal com ponto** ("1234.56") via input hidden — compatível com `z.coerce.number()`
+  (financeiro/pagamentos) e o `num()` do estoque. Não usar em servicos (parser BRL próprio).
+- **`date-field.tsx`** — `DateField`: wrapper estilizado de `type="date"` (mesma semântica yyyy-mm-dd).
+- **`status-badge.tsx`** ganhou domínios: `servico` (ATIVO/INATIVO), `estoque` (ZERADO/BAIXO/OK
+  + helper `nivelEstoque(qtd, min)`), `conta_pagar` (Em aberto/Pago/Vencido) e `conta_receber`
+  (Em aberto/Recebido/Vencido — terminologia de recebíveis preservada).
 
-### Novos componentes
-- _(a preencher)_
+### Telas migradas para DataTable (+ RowActions/paginação/busca)
+- **Estoque**: `pecas-list` (busca server-side `?q=` + `?categoria=`, paginação, RowActions);
+  histórico de movimentações → `movimentacoes-table` (paginado).
+- **Serviços**: lista → `servicos-table` (RowActions consolidando Editar/Ativar-Desativar/Excluir).
+- **Pagamentos**: lista → `pagamentos-table` (filtros `?q=/?status=/?forma=`, paginação, RowActions).
+- **Financeiro**: `contas-pagar-list`, `contas-receber-list`, `contas-a-faturar` → DataTable + RowActions.
+- **Fornecedores**: lista → `fornecedores-table` (busca server-side, paginação, RowActions);
+  `fornecedor-search` removido (busca migrou para a toolbar).
 
-### Mudanças de comportamento
-- _(a preencher)_
+### StatusBadge / formulários / feedback
+- Badges hardcoded → `StatusBadge` nos domínios novos (estoque, serviço, conta_pagar/receber)
+  em estoque, serviços, financeiro, fornecedores e relatórios.
+- `CurrencyField` em peça (custo/venda), contas a pagar/receber (valor), caixa (abertura/movimento).
+- `DateField` em pagamento (data) e contas (vencimento).
+- **Toasts** em todas as mutações (peça/movimentação/serviço/pagamento/contas/caixa/exportação).
+- `ConfirmDialog` enriquecido com `consequenceItems` (peça, serviço, fornecedor, contas).
+- Relatórios: `EmptyState` unificado em gráficos vazios; `CHART_PALETTE` — 3 cores de baixo
+  contraste no dark ajustadas (>= ~4.5:1), shape do array preservado.
 
-### Correções de acessibilidade
-- _(a preencher)_
+### Correções da revisão adversarial (9 confirmadas)
+- **Recebíveis mostravam "Pago"/"Pendente"** → domínio `conta_receber` ("Recebido"/"Em aberto");
+  contas a pagar mantêm "Em aberto"/"Pago"/"Vencido" (regressão de terminologia corrigida).
+- **`ExcluirPagamento` fechava em silêncio no erro** → toast de erro + diálogo permanece aberto.
+- **`movimentacao-form`** sem toast de sucesso → adicionado.
+- **Erro de exclusão de peça** invisível fora do diálogo → também via toast de erro.
+- **`fornecedor-form`** erro duplicado (toast + inline) → mantido só o inline.
+- Componentes órfãos pós-consolidação removidos: `delete-peca-button`, `servico-toggle`, `servico-delete`.
+
+### NÃO alterado (preservado)
+- `server/{estoque,servicos,pagamentos,financeiro,fornecedores,relatorios}.ts` — lógica de
+  giro, contas, alternância de pagamento, `deriveStatus`, cálculos de relatório e schemas Zod.
+- O input de preço de **serviços** ficou intacto (parser BRL próprio incompatível com CurrencyField).
 
 ### Recomendações pendentes
-- _(a preencher)_
+- **Fase 5** IA + Markdown seguro · **Fase 6** site público/mobile · **Fase 7** dark/perf/testes.
 
 ---
 

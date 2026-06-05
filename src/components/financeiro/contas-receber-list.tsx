@@ -2,20 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Check,
-  Loader2,
-  Undo2,
-  ArrowDownCircle,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, Check, Undo2, ArrowDownCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
+import type { MenuItem } from "@/components/ui/dropdown-menu";
 import { formatBRL, formatDateBR } from "@/lib/utils";
 import { Modal } from "./modal";
 import {
@@ -50,6 +43,15 @@ function vencida(row: ContaReceberRow): boolean {
   return new Date(row.vencimento) < hoje;
 }
 
+/** Mapeia a situação da conta a receber para o status de domínio. */
+function situacaoRecebimento(
+  row: ContaReceberRow
+): "RECEBIDO" | "VENCIDO" | "EM_ABERTO" {
+  if (row.recebido) return "RECEBIDO";
+  if (vencida(row)) return "VENCIDO";
+  return "EM_ABERTO";
+}
+
 export function ContasReceberList({
   contas,
   clientes,
@@ -82,19 +84,92 @@ export function ContasReceberList({
     setModalOpen(true);
   }
 
-  function toggle(id: string) {
-    startTransition(() => void alternarRecebimentoConta(id).then(() => router.refresh()));
+  function toggle(row: ContaReceberRow) {
+    startTransition(async () => {
+      const res = await alternarRecebimentoConta(row.id);
+      if (res.ok) {
+        toast({
+          title: row.recebido
+            ? "Recebimento desfeito"
+            : "Conta marcada como recebida",
+          variant: "success",
+        });
+        router.refresh();
+        return;
+      }
+      toast({ title: res.error, variant: "error" });
+    });
   }
 
   function excluir() {
     if (!confirmar) return;
     const id = confirmar.id;
-    startTransition(() =>
-      excluirContaReceber(id).then(() => {
+    startTransition(async () => {
+      const res = await excluirContaReceber(id);
+      if (res.ok) {
+        toast({ title: "Conta a receber excluída", variant: "success" });
         setConfirmar(null);
         router.refresh();
-      })
-    );
+        return;
+      }
+      toast({ title: res.error, variant: "error" });
+    });
+  }
+
+  const columns: Column<ContaReceberRow>[] = [
+    {
+      key: "descricao",
+      header: "Descrição",
+      render: (c) => <span className="font-medium text-foreground">{c.descricao}</span>,
+    },
+    {
+      key: "cliente",
+      header: "Cliente / OS",
+      render: (c) => (
+        <div className="text-sm text-muted">
+          {c.customerNome ?? "—"}
+          {c.serviceOrderNumero && (
+            <p className="text-xs text-subtle">OS {c.serviceOrderNumero}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "valor",
+      header: "Valor",
+      align: "right",
+      render: (c) => (
+        <span className="tabular-nums font-medium">{formatBRL(c.valor)}</span>
+      ),
+    },
+    {
+      key: "vencimento",
+      header: "Vencimento",
+      render: (c) => <span className="text-sm">{formatDateBR(c.vencimento)}</span>,
+    },
+    {
+      key: "situacao",
+      header: "Situação",
+      render: (c) => <StatusBadge kind="conta_receber" status={situacaoRecebimento(c)} />,
+    },
+  ];
+
+  function actions(c: ContaReceberRow): MenuItem[] {
+    return [
+      {
+        label: c.recebido ? "Desfazer recebimento" : "Marcar como recebido",
+        icon: c.recebido ? Undo2 : Check,
+        disabled: pending,
+        onClick: () => toggle(c),
+      },
+      { label: "Editar", icon: Pencil, onClick: () => abrirEdicao(c) },
+      {
+        label: "Excluir",
+        icon: Trash2,
+        variant: "danger",
+        onClick: () => setConfirmar(c),
+      },
+    ];
   }
 
   return (
@@ -106,90 +181,41 @@ export function ContasReceberList({
         </Button>
       </div>
 
-      {contas.length === 0 ? (
-        <EmptyState
-          icon={ArrowDownCircle}
-          title="Nenhuma conta a receber"
-          message="Cadastre valores a receber de clientes ou ordens de serviço."
-          action={
-            <Button size="sm" onClick={abrirNovo}>
-              <Plus className="h-4 w-4" />
-              Nova conta a receber
-            </Button>
-          }
-        />
-      ) : (
-        <Table>
-          <THead>
-            <TR>
-              <TH>Descrição</TH>
-              <TH>Cliente / OS</TH>
-              <TH className="text-right">Valor</TH>
-              <TH>Vencimento</TH>
-              <TH>Situação</TH>
-              <TH className="text-right">Ações</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {contas.map((c) => (
-              <TR key={c.id}>
-                <TD className="font-medium">{c.descricao}</TD>
-                <TD className="text-sm text-muted">
-                  {c.customerNome ?? "—"}
-                  {c.serviceOrderNumero && (
-                    <p className="text-xs text-subtle">OS {c.serviceOrderNumero}</p>
-                  )}
-                </TD>
-                <TD className="text-right tabular-nums font-medium">{formatBRL(c.valor)}</TD>
-                <TD className="text-sm">{formatDateBR(c.vencimento)}</TD>
-                <TD>
-                  {c.recebido ? (
-                    <Badge variant="success">Recebido</Badge>
-                  ) : vencida(c) ? (
-                    <Badge variant="danger">Vencida</Badge>
-                  ) : (
-                    <Badge variant="warning">Em aberto</Badge>
-                  )}
-                </TD>
-                <TD>
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={pending}
-                      title={c.recebido ? "Desfazer recebimento" : "Marcar como recebido"}
-                      aria-label={c.recebido ? "Desfazer recebimento" : "Marcar como recebido"}
-                      onClick={() => toggle(c.id)}
-                      className={c.recebido ? "text-muted" : "text-success"}
-                    >
-                      {c.recebido ? <Undo2 className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Editar"
-                      aria-label="Editar conta"
-                      onClick={() => abrirEdicao(c)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Excluir"
-                      aria-label="Excluir conta"
-                      onClick={() => setConfirmar(c)}
-                      className="text-danger"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TD>
-              </TR>
-            ))}
-          </TBody>
-        </Table>
-      )}
+      <DataTable
+        columns={columns}
+        data={contas}
+        rowKey={(c) => c.id}
+        caption="Lista de contas a receber"
+        showCount={false}
+        rowActions={actions}
+        emptyIcon={ArrowDownCircle}
+        emptyTitle="Nenhuma conta a receber"
+        emptyMessage="Cadastre valores a receber de clientes ou ordens de serviço."
+        emptyAction={
+          <Button size="sm" onClick={abrirNovo}>
+            <Plus className="h-4 w-4" />
+            Nova conta a receber
+          </Button>
+        }
+        mobileCard={(c) => (
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-foreground">{c.descricao}</p>
+              <p className="mt-0.5 truncate text-xs text-muted">
+                {c.customerNome ?? "Sem cliente"}
+                {c.serviceOrderNumero ? ` · OS ${c.serviceOrderNumero}` : ""}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+                <StatusBadge kind="conta_receber" status={situacaoRecebimento(c)} />
+                <span>Venc. {formatDateBR(c.vencimento)}</span>
+              </div>
+            </div>
+            <span className="shrink-0 tabular-nums font-medium text-foreground">
+              {formatBRL(c.valor)}
+            </span>
+          </div>
+        )}
+      />
 
       <Modal
         open={modalOpen}
@@ -208,23 +234,28 @@ export function ContasReceberList({
       <ConfirmDialog
         open={confirmar !== null}
         title="Excluir conta a receber?"
-        description={
+        recordName={confirmar ? `Conta "${confirmar.descricao}"` : undefined}
+        description="Esta ação remove a conta permanentemente e não pode ser desfeita."
+        consequenceItems={
           confirmar
-            ? `A conta "${confirmar.descricao}" será removida permanentemente.`
+            ? [
+                `Valor de ${formatBRL(confirmar.valor)}`,
+                `Vencimento em ${formatDateBR(confirmar.vencimento)}`,
+                ...(confirmar.customerNome
+                  ? [`Cliente: ${confirmar.customerNome}`]
+                  : []),
+                ...(confirmar.serviceOrderNumero
+                  ? [`OS ${confirmar.serviceOrderNumero}`]
+                  : []),
+              ]
             : undefined
         }
         confirmLabel={pending ? "Excluindo…" : "Excluir"}
+        variant="danger"
         loading={pending}
         onConfirm={excluir}
         onCancel={() => setConfirmar(null)}
       />
-
-      {pending && (
-        <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl border border-border bg-bg-elevated px-3 py-2 text-xs text-muted shadow-lg">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Processando…
-        </div>
-      )}
     </div>
   );
 }

@@ -17,9 +17,9 @@ import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { StatusBadge, nivelEstoque } from "@/components/ui/status-badge";
 import { maskCPFCNPJ } from "@/lib/masks";
 import { waLink } from "@/lib/whatsapp";
 import { formatBRL, formatNumber } from "@/lib/utils";
@@ -172,24 +172,27 @@ export default async function FornecedorDetailPage({
                     </TR>
                   </THead>
                   <TBody>
-                    {fornecedor.parts.map((p) => {
-                      const baixoEstoque = p.quantidade <= p.estoqueMinimo;
-                      return (
-                        <TR key={p.id}>
-                          <TD className="font-medium">{p.nome}</TD>
-                          <TD className="text-muted">{p.codigoInterno}</TD>
-                          <TD className="text-muted">{p.categoria ?? "—"}</TD>
-                          <TD className="text-right">
-                            <Badge variant={baixoEstoque ? "danger" : "default"}>
+                    {fornecedor.parts.map((p) => (
+                      <TR key={p.id}>
+                        <TD className="font-medium">{p.nome}</TD>
+                        <TD className="text-muted">{p.codigoInterno}</TD>
+                        <TD className="text-muted">{p.categoria ?? "—"}</TD>
+                        <TD className="text-right">
+                          <span className="inline-flex items-center justify-end gap-2">
+                            <span className="text-muted">
                               {formatNumber(p.quantidade)}
-                            </Badge>
-                          </TD>
-                          <TD className="text-right text-muted">
-                            {formatBRL(p.precoCusto)}
-                          </TD>
-                        </TR>
-                      );
-                    })}
+                            </span>
+                            <StatusBadge
+                              kind="estoque"
+                              status={nivelEstoque(p.quantidade, p.estoqueMinimo)}
+                            />
+                          </span>
+                        </TD>
+                        <TD className="text-right text-muted">
+                          {formatBRL(p.precoCusto)}
+                        </TD>
+                      </TR>
+                    ))}
                   </TBody>
                 </Table>
               )}

@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { CurrencyField } from "@/components/ui/currency-field";
+import { DateField } from "@/components/ui/date-field";
+import { toast } from "@/components/ui/toast";
 import { criarContaPagar, atualizarContaPagar, type ActionResult } from "@/server/financeiro";
 
 export type SupplierOption = { id: string; nome: string };
@@ -44,8 +47,13 @@ export function ContaPagarForm({
         : await criarContaPagar(form);
       if (!res.ok) {
         setError(res.error);
+        toast({ title: res.error, variant: "error" });
         return;
       }
+      toast({
+        title: initial ? "Conta a pagar atualizada" : "Conta a pagar criada",
+        variant: "success",
+      });
       router.refresh();
       onDone?.();
     });
@@ -92,15 +100,10 @@ export function ContaPagarForm({
           <Label htmlFor="cp-valor" required>
             Valor (R$)
           </Label>
-          <Input
+          <CurrencyField
             id="cp-valor"
             name="valor"
-            type="number"
-            step="0.01"
-            min="0.01"
-            inputMode="decimal"
-            defaultValue={initial ? String(initial.valor) : ""}
-            placeholder="0,00"
+            defaultValue={initial ? initial.valor : null}
             required
           />
         </div>
@@ -108,10 +111,9 @@ export function ContaPagarForm({
           <Label htmlFor="cp-vencimento" required>
             Vencimento
           </Label>
-          <Input
+          <DateField
             id="cp-vencimento"
             name="vencimento"
-            type="date"
             defaultValue={initial?.vencimento ?? ""}
             required
           />

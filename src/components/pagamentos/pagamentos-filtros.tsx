@@ -1,8 +1,6 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { STATUS_OPTIONS, FORMA_OPTIONS } from "./constants";
 
@@ -19,17 +17,7 @@ export function PagamentosFiltros() {
   }
 
   return (
-    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-        <Input
-          defaultValue={params.get("q") ?? ""}
-          onChange={(e) => setParam("q", e.target.value)}
-          placeholder="Buscar por OS ou cliente…"
-          className="pl-9"
-        />
-      </div>
-
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Select
         defaultValue={params.get("status") ?? ""}
         onChange={(e) => setParam("status", e.target.value)}
