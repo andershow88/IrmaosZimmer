@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toast";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -48,7 +49,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <Toaster>{children}</Toaster>
+      </body>
     </html>
   );
 }

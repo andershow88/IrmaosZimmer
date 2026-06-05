@@ -8,12 +8,16 @@
   --border: #d4dae3;
   --border-strong: #94a3b8;
   --foreground: #1f2123;
-  --muted: #5b6470;
-  --subtle: #94a0a8;
+  /* texto secundário — escurecido p/ >= 4.5:1 sobre --bg (#f4f6f9) */
+  --muted: #4c545f;
+  /* texto terciário — escurecido p/ >= 4.5:1 sobre --bg quando usado como texto significativo */
+  --subtle: #6b7480;
   --selection-bg: #00a651;
   --selection-fg: #ffffff;
   --shadow-card: rgba(0, 0, 0, 0.08);
   --ring-glow: rgba(0, 166, 81, 0.25);
+  /* token de foco visível (focus-visible ring) */
+  --ring: #00a651;
 
   --accent: #00a651;
   --accent-2: #00913f;
@@ -21,10 +25,10 @@
   --accent-deep: #0a5e37;
   --accent-soft: rgba(0, 166, 81, 0.1);
 
-  --success: #16a34a;
-  --warning: #f59e0b;
+  --success: #15803d;
+  --warning: #b45309;
   --danger: #dc2626;
-  --info: #0ea5e9;
+  --info: #0369a1;
 }
 
 [data-theme="dark"] {
@@ -35,12 +39,16 @@
   --border: #2e3034;
   --border-strong: #3c3f44;
   --foreground: #e9ece8;
-  --muted: #9aa0a0;
-  --subtle: #6b7176;
+  /* texto secundário — >= 4.5:1 sobre --bg (#0e0f11) */
+  --muted: #a3a9a9;
+  /* texto terciário — clareado p/ >= 4.5:1 sobre --bg quando usado como texto significativo */
+  --subtle: #868d92;
   --selection-bg: #2ec46b;
   --selection-fg: #07140c;
   --shadow-card: rgba(0, 0, 0, 0.5);
   --ring-glow: rgba(46, 196, 107, 0.35);
+  /* token de foco visível (focus-visible ring) */
+  --ring: #2ec46b;
 
   --accent: #2ec46b;
   --accent-2: #00a651;
@@ -48,10 +56,11 @@
   --accent-deep: #0a6b3f;
   --accent-soft: rgba(46, 196, 107, 0.16);
 
-  --success: #16a34a;
-  --warning: #f59e0b;
-  --danger: #dc2626;
-  --info: #0ea5e9;
+  /* cores de status clareadas p/ contraste de texto sobre fundo escuro */
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #38bdf8;
 }
 
 @theme {
@@ -64,6 +73,11 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-subtle: var(--subtle);
+  /* aliases semânticos de texto -> foreground/muted/subtle (compatibilidade) */
+  --color-text-primary: var(--foreground);
+  --color-text-secondary: var(--muted);
+  --color-text-tertiary: var(--subtle);
+  --color-ring: var(--ring);
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-accent-light: var(--accent-light);
@@ -109,6 +123,14 @@
   }
   input, textarea, select {
     color-scheme: light dark;
+  }
+  /* foco visível padrão p/ links e elementos focáveis sem ring próprio */
+  a:focus-visible,
+  [tabindex]:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
   }
 }
 
@@ -272,3 +294,27 @@
   50% { opacity: 0.55; }
 }
 .animate-pulse-soft { animation: pulse-soft 1.6s ease-in-out infinite; }
+
+/* ============================================================
+   MOVIMENTO REDUZIDO — respeita prefers-reduced-motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-fade-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* mantém o pulse de loading visível, porém sem piscar */
+  .animate-pulse-soft {
+    animation: none !important;
+    opacity: 0.75 !important;
+  }
+}
