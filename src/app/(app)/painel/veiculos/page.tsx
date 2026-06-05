@@ -5,16 +5,32 @@ import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import {
-  VeiculosList,
+  VeiculosTable,
   type VeiculoListItem,
-} from "@/components/veiculos/veiculos-list";
+} from "@/components/veiculos/veiculos-table";
 
 export const dynamic = "force-dynamic";
 
-export default async function VeiculosPage() {
+export default async function VeiculosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   await requireUser();
+  const { q } = await searchParams;
+  const termo = q?.trim() ?? "";
 
   const veiculos = await prisma.vehicle.findMany({
+    where: termo
+      ? {
+          OR: [
+            { placa: { contains: termo, mode: "insensitive" } },
+            { marca: { contains: termo, mode: "insensitive" } },
+            { modelo: { contains: termo, mode: "insensitive" } },
+            { customer: { nome: { contains: termo, mode: "insensitive" } } },
+          ],
+        }
+      : undefined,
     orderBy: [{ marca: "asc" }, { modelo: "asc" }],
     select: {
       id: true,
@@ -58,7 +74,7 @@ export default async function VeiculosPage() {
         }
       />
 
-      <VeiculosList veiculos={items} />
+      <VeiculosTable veiculos={items} initialQuery={termo} />
     </div>
   );
 }

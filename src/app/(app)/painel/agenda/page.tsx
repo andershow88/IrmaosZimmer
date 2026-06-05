@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Plus, User, Car, Wrench, Clock } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Prisma, StatusAgendamento } from "@prisma/client";
@@ -7,10 +7,9 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { AgendaFiltros } from "@/components/agenda/agenda-filtros";
+import { AgendamentoCard } from "@/components/agenda/agendamento-card";
 import { CalendarToggle } from "@/components/agenda/calendar-toggle";
 import {
   CalendarWeek,
@@ -369,6 +368,7 @@ export default async function AgendaPage({
           mecanicoId={sp.mecanico ?? ""}
           mecanicos={mecanicos}
           ocultarBusca
+          resultCount={totalBlocos}
         />
       </div>
 
@@ -501,6 +501,7 @@ async function ListaView({
           busca={busca}
           mecanicoId={mecanicoParam}
           mecanicos={mecanicos}
+          resultCount={agendamentos.length}
         />
       </div>
 
@@ -534,52 +535,9 @@ async function ListaView({
                 </span>
               </h2>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {grupo.itens.map((a) => {
-                  const veiculo = a.vehicle
-                    ? `${a.vehicle.marca} ${a.vehicle.modelo}${a.vehicle.placa ? ` · ${a.vehicle.placa}` : ""}`
-                    : "Sem veículo";
-                  return (
-                    <Link key={a.id} href={`/painel/agenda/${a.id}`} className="block">
-                      <Card className="h-full transition hover:border-border-strong/70 hover:shadow-md">
-                        <CardBody className="flex flex-col gap-2.5">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-                              <Clock className="h-4 w-4 text-accent" />
-                              {format(a.dataHora, "HH:mm", { locale: ptBR })}
-                              <span className="text-xs font-normal text-muted">
-                                · {a.duracaoMin} min
-                              </span>
-                            </div>
-                            <StatusBadge kind="agendamento" status={a.status} />
-                          </div>
-
-                          <div className="flex items-center gap-1.5 text-sm text-foreground">
-                            <User className="h-3.5 w-3.5 shrink-0 text-muted" />
-                            <span className="truncate font-medium">{a.customer.nome}</span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 text-sm text-muted">
-                            <Car className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{veiculo}</span>
-                          </div>
-
-                          {a.servicoDesejado && (
-                            <div className="flex items-center gap-1.5 text-sm text-muted">
-                              <Wrench className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate">{a.servicoDesejado}</span>
-                            </div>
-                          )}
-
-                          <div className="mt-0.5 text-xs text-subtle">
-                            {a.mecanico?.name
-                              ? `Mecânico: ${a.mecanico.name}`
-                              : "Sem mecânico definido"}
-                          </div>
-                        </CardBody>
-                      </Card>
-                    </Link>
-                  );
-                })}
+                {grupo.itens.map((a) => (
+                  <AgendamentoCard key={a.id} agendamento={a} />
+                ))}
               </div>
             </section>
           ))}

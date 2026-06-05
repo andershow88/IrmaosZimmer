@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Select } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
+import { FilterBar } from "@/components/ui/filter-bar";
 import type { StatusAgendamento } from "@prisma/client";
 
 const STATUS_OPTIONS: { value: StatusAgendamento; label: string }[] = [
@@ -23,6 +25,8 @@ export interface AgendaFiltrosProps {
   mecanicos?: { id: string; name: string }[];
   /** Esconde o campo de busca textual (visão calendário não usa busca). */
   ocultarBusca?: boolean;
+  /** Contagem de resultados, exibida à direita do FilterBar. */
+  resultCount?: number;
 }
 
 export function AgendaFiltros({
@@ -31,36 +35,64 @@ export function AgendaFiltros({
   mecanicoId = "",
   mecanicos = [],
   ocultarBusca = false,
+  resultCount,
 }: AgendaFiltrosProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [buscaLocal, setBuscaLocal] = useState(busca);
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
     const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
+  function handleBusca(next: string) {
+    setBuscaLocal(next);
+    setParam("q", next.trim());
+  }
+
+  function limpar() {
+    setBuscaLocal("");
+    const params = new URLSearchParams(searchParams.toString());
+    // Limpa apenas os filtros; preserva modo/view/ref da navegação.
+    params.delete("q");
+    params.delete("status");
+    params.delete("mecanico");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
+  const activeCount =
+    (status ? 1 : 0) +
+    (mecanicoId ? 1 : 0) +
+    (!ocultarBusca && busca ? 1 : 0);
+
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <FilterBar
+      activeCount={activeCount}
+      onClear={limpar}
+      resultCount={resultCount}
+    >
       {!ocultarBusca && (
-        <div className="sm:w-72">
-          <Input
-            type="search"
-            placeholder="Buscar por cliente, veículo ou serviço..."
-            defaultValue={busca}
-            onChange={(e) => setParam("q", e.target.value)}
-          />
-        </div>
+        <SearchInput
+          value={buscaLocal}
+          onChange={handleBusca}
+          debounce={300}
+          placeholder="Buscar por cliente, veículo ou serviço…"
+          aria-label="Buscar agendamentos"
+          className="sm:w-72"
+        />
       )}
       {mecanicos.length > 0 && (
         <div className="sm:w-56">
           <Select
             value={mecanicoId}
             onChange={(e) => setParam("mecanico", e.target.value)}
+            aria-label="Filtrar por mecânico"
           >
             <option value="">Todos os mecânicos</option>
             {mecanicos.map((m) => (
@@ -72,7 +104,11 @@ export function AgendaFiltros({
         </div>
       )}
       <div className="sm:w-56">
-        <Select value={status} onChange={(e) => setParam("status", e.target.value)}>
+        <Select
+          value={status}
+          onChange={(e) => setParam("status", e.target.value)}
+          aria-label="Filtrar por status"
+        >
           <option value="">Todos os status</option>
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -81,6 +117,6 @@ export function AgendaFiltros({
           ))}
         </Select>
       </div>
-    </div>
+    </FilterBar>
   );
 }

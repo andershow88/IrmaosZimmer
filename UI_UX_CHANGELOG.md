@@ -182,25 +182,70 @@ Achados-chave verificados no código real: focus ring inconsistente
 
 ---
 
-## Fase 3 — OS Workspace, Clientes, Veículos, Agenda, Mecânico (+ Dashboard) ⬜ Pendente
+## Fase 3 — OS Workspace, Clientes, Veículos, Agenda, Mecânico (+ Dashboard) ✅ Concluída (2026-06-05)
+
+> Telas operacionais centrais migradas para os primitivos da Fase 2. Após a
+> implementação inicial, uma **revisão adversarial multi-agente** (5 superfícies,
+> achados verificados de forma independente) apontou regressões e lacunas que
+> foram corrigidas antes do fechamento da fase. Verificação: `tsc` limpo,
+> `next build` limpo e **smoke runtime** (dev :3971, cookies por papel) — todas as
+> rotas internas 200; redirecionamentos/404 de segurança conforme esperado.
 
 ### Telas alteradas
-- _(a preencher)_
+- **OS detail** (`ordens-servico/[id]/page.tsx` + `components/ordens/*`): abas com URL
+  (`?aba=`), header sticky compacto (`os-header`), action bar sticky (`os-action-bar`),
+  timeline via `AuditLog` (`os-timeline`), undo de item com toast, confirmação de
+  ENTREGUE com checklist, página de impressão (`[id]/imprimir`). **Anexos agora em
+  lazy-load** (Suspense) — saíram da query principal (fix `os-3`).
+- **Clientes** (`clientes/page.tsx`, `[id]`, `clientes-table`): lista em `DataTable` +
+  `RowActions` + **busca server-side persistida na URL** (`?q=`) + **paginação**.
+- **Veículos** (`veiculos/page.tsx`, `[id]`, `veiculos-table`, `registrar-km-modal`):
+  idem clientes + modal de registrar km.
+- **Dashboard** (`painel/page.tsx`, `server/dashboard.ts`, `dashboard/*`): stat-cards de
+  urgência, "dias até entrega", `EmptyState` no chart, priorização de estoque crítico,
+  contexto por papel (`BLOCOS_POR_PAPEL`, parâmetros `userId/role` opcionais), `SectionCard`.
+- **Painel do Mecânico / Oficina** (`oficina/`, `components/oficina/*`, `server/oficina.ts`):
+  módulo novo (lista touch-first + detalhe), timer de apontamento, status, notas, checklist.
+- **Agenda** (`agenda/page.tsx`, `agenda-filtros`, `calendar-toggle`): filtros padronizados
+  em `FilterBar` + `SearchInput` (com "Limpar filtros" e contagem); toggles Calendário|Lista
+  e Semana|Dia migrados para `Tabs` acessível; card da lista extraído em `AgendamentoCard`.
+  **Sem tocar** na engine de disponibilidade, no fuso (SP), no `CalendarWeek` nem nas queries.
+
+### Novos componentes / utilitários
+- `components/anexos/anexos-secao.tsx` — seção de anexos da OS (async + `AnexosSecaoFallback`).
+- `components/agenda/agendamento-card.tsx` — card responsivo reutilizável de agendamento.
+- `lib/use-list-controls.ts` — hook de busca (URL `?q=`) + paginação no cliente (reuso clientes/veículos).
+- `lib/status-constants.ts` — `STATUS_OS_ABERTAS` + `isStatusOSAberta` (deduplicado de 2 telas).
 
 ### Componentes reutilizados
-- _(a preencher)_
+- `DataTable`/`Pagination`/`RowActions`/`SearchInput`/`FilterBar`/`Tabs`/`ConfirmDialog`/
+  `EmptyState`/`StatusBadge`/`PageHeader`/`Skeleton` (todos da Fase 1/2).
 
-### Novos componentes
-- _(a preencher)_
+### Correções da revisão adversarial (achados confirmados)
+- **Segurança (oficina)** — `requirePageRole(["MECANICO","ADMINISTRADOR"])` nas rotas
+  `/painel/oficina` e `/painel/oficina/[id]`; `obterDetalheOficina` passa a validar
+  posse (`mecanicoId`/ADMINISTRADOR). Mecânico não acessa mais OS de terceiros
+  (verificado: outro mecânico → 404; ATENDENTE → redirect `/painel`).
+- **Regressão de busca (clientes)** — busca voltou a ser server-side com `?q=` na URL
+  (bookmark/refresh/compartilhamento) e agora pesquisa **telefone E whatsapp** (não só um).
+- **Paginação** ausente em clientes/veículos — adicionada (client-side sobre o conjunto filtrado).
+- **`deleteVeiculo`** deixou de `redirect()` e retorna `{ ok }` (espelha `deleteCliente`):
+  some o toast inalcançável; a lista atualiza no lugar e o detalhe navega para a lista.
+- **ConfirmDialog de exclusão de cliente** deixa claro que OS/orçamentos vinculados
+  **impedem** a exclusão (antes prometia cascata enganosa).
+- **Tipagem `Decimal`** — `total: unknown` + `as number` removidos (clientes/veículos `[id]`).
+- **Timer do mecânico** — cronômetro ao vivo só após `mounted` (sem skew de relógio SSR/cliente).
+- **a11y** — `aria-hidden` em ícones decorativos das barras de ação.
 
 ### Mudanças de comportamento
-- _(a preencher)_
+- Busca de clientes/veículos é persistida na URL e filtrada no servidor (300ms debounce).
+- Listas paginadas (20/página) com ordenação no cliente sobre o conjunto filtrado.
+- Agenda: "Limpar filtros" e contador de resultados; busca da lista com debounce.
 
-### Correções de acessibilidade
-- _(a preencher)_
-
-### Recomendações pendentes
-- _(a preencher)_
+### Recomendações pendentes (próximas fases)
+- Migrar `ConfiguracoesTabs` e demais listas (estoque/pagamentos/financeiro/fornecedores)
+  para os primitivos — **Fase 4**.
+- IA + markdown seguro — **Fase 5**; site público/mobile — **Fase 6**; dark/perf/testes — **Fase 7**.
 
 ---
 

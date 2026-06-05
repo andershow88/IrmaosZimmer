@@ -18,6 +18,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
+import type { Role } from "@/lib/roles";
 
 export type NavItem = {
   label: string;
@@ -25,6 +26,11 @@ export type NavItem = {
   icon: LucideIcon;
   /** Quando true, só fica ativo em correspondência exata da rota. */
   exact?: boolean;
+  /**
+   * Quando definido, o item só aparece para as funções listadas.
+   * Quando ausente, o item é visível para todas as funções.
+   */
+  roles?: Role[];
 };
 
 export type NavGroup = {
@@ -48,6 +54,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Dashboard", href: "/painel", icon: LayoutDashboard, exact: true },
       { label: "Agenda", href: "/painel/agenda", icon: CalendarDays },
       { label: "Ordens de Serviço", href: "/painel/ordens-servico", icon: ClipboardList },
+      {
+        label: "Oficina",
+        href: "/painel/oficina",
+        icon: Wrench,
+        roles: ["MECANICO", "ADMINISTRADOR"],
+      },
       { label: "Checklists", href: "/painel/checklists", icon: ListChecks },
     ],
   },
@@ -104,6 +116,22 @@ export const NAV_GROUPS: NavGroup[] = [
 
 /** Lista achatada de todos os itens (usada para desempate de rota ativa). */
 const ALL_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+
+/**
+ * Filtra os grupos/itens visíveis para a função informada. Itens sem `roles`
+ * são visíveis para todos; itens com `roles` só aparecem quando a função consta
+ * na lista. Grupos que ficarem vazios após o filtro são removidos.
+ */
+export function visibleGroups(
+  role: Role | string | null | undefined
+): NavGroup[] {
+  return NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      (item) => !item.roles || (role != null && item.roles.includes(role as Role))
+    ),
+  })).filter((group) => group.items.length > 0);
+}
 
 /** Verdadeiro se a rota casa com o href do item (exato ou como prefixo). */
 function matches(pathname: string, item: NavItem): boolean {

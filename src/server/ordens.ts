@@ -506,3 +506,183 @@ export async function resumirOSComIA(
 
   return { ok: true, texto };
 }
+
+// ---------------------------------------------------------------------------
+// readdItem — "Desfazer" a remoção de um item (re-adiciona reutilizando a
+// MESMA lógica de addServicoItem/addPecaItem). NÃO altera cálculos/estoque
+// existentes: apenas chama as ações públicas já validadas.
+// ---------------------------------------------------------------------------
+
+export type RemovedItemSnapshot = {
+  serviceOrderId: string;
+  tipo: "SERVICO" | "PECA";
+  /** Id do serviço de catálogo (quando tipo = SERVICO). */
+  serviceId?: string | null;
+  /** Id da peça de estoque (quando tipo = PECA). */
+  partId?: string | null;
+  quantidade: number;
+};
+
+/**
+ * Re-adiciona um item previamente removido, reaproveitando as ações de adição
+ * já existentes (com toda a validação de estoque, recálculo de totais e de
+ * tempo previsto). Retorna erro amigável caso o item não tenha mais vínculo
+ * de catálogo/estoque (ex.: serviço/peça excluído).
+ */
+export async function readdItem(
+  snapshot: RemovedItemSnapshot
+): Promise<{ ok: boolean; error?: string }> {
+  if (snapshot.tipo === "SERVICO") {
+    if (!snapshot.serviceId) {
+      return { ok: false, error: "Não é possível desfazer: serviço sem referência de catálogo." };
+    }
+    const fd = new FormData();
+    fd.set("serviceId", snapshot.serviceId);
+    fd.set("quantidade", String(snapshot.quantidade));
+    return addServicoItem(snapshot.serviceOrderId, fd);
+  }
+
+  if (!snapshot.partId) {
+    return { ok: false, error: "Não é possível desfazer: peça sem referência de estoque." };
+  }
+  const fd = new FormData();
+  fd.set("partId", snapshot.partId);
+  fd.set("quantidade", String(snapshot.quantidade));
+  return addPecaItem(snapshot.serviceOrderId, fd);
+}
+
+// ---------------------------------------------------------------------------
+// getOSTimeline — leitura cronológica de atividades da OS.
+// Combina o AuditLog (com usuário responsável) e eventos derivados das
+// entidades relacionadas (criação, itens, horas, pagamentos). Somente LEITURA.
+// ---------------------------------------------------------------------------
+
+export type TimelineEventKind =
+  | "criacao"
+  | "status"
+  | "item_add"
+  | "item_remove"
+  | "pagamento"
+  | "horas"
+  | "auditoria";
+
+export type TimelineEvent = {
+  id: string;
+  kind: TimelineEventKind;
+  titulo: string;
+  detalhe?: string | null;
+  usuario?: string | null;
+  data: Date;
+};
+
+export async function getOSTimeline(
+  serviceOrderId: string
+): Promise<TimelineEvent[]> {
+  await requireUserForAction();
+
+  const os = await prisma.serviceOrder.findUnique({
+    where: { id: serviceOrderId },
+    select: { id: true, numero: true, dataAbertura: true },
+  });
+  if (!os) return [];
+
+  const eventos: TimelineEvent[] = [];
+
+  // Evento de criação (derivado).
+  eventos.push({
+    id: `criacao-${os.id}`,
+    kind: "criacao",
+    titulo: `OS ${os.numero} aberta`,
+    data: os.dataAbertura,
+  });
+
+  // Trilha de auditoria (status, edições) — inclui usuário responsável.
+  const logs = await prisma.auditLog.findMany({
+    where: { entidade: "ServiceOrder", entidadeId: serviceOrderId },
+    orderBy: { createdAt: "asc" },
+    include: { user: { select: { name: true } } },
+  });
+  for (const l of logs) {
+    // A criação já é representada pelo evento derivado acima.
+    if (l.acao === "CRIAR") continue;
+    eventos.push({
+      id: `audit-${l.id}`,
+      kind: l.detalhe?.toLowerCase().includes("status") ? "status" : "auditoria",
+      titulo: l.detalhe ?? `${l.acao} em ${l.entidade}`,
+      usuario: l.user?.name ?? null,
+      data: l.createdAt,
+    });
+  }
+
+  // Apontamentos de horas (início/fim) — derivado.
+  const horas = await prisma.timeEntry.findMany({
+    where: { serviceOrderId },
+    orderBy: { inicio: "asc" },
+    include: { user: { select: { name: true } } },
+  });
+  for (const t of horas) {
+    eventos.push({
+      id: `hora-inicio-${t.id}`,
+      kind: "horas",
+      titulo: "Cronômetro iniciado",
+      usuario: t.user?.name ?? null,
+      data: t.inicio,
+    });
+    if (t.fim) {
+      eventos.push({
+        id: `hora-fim-${t.id}`,
+        kind: "horas",
+        titulo: "Cronômetro parado",
+        detalhe: t.minutos != null ? `${t.minutos} min registrados` : null,
+        usuario: t.user?.name ?? null,
+        data: t.fim,
+      });
+    }
+  }
+
+  // Pagamentos — derivado.
+  const pagamentos = await prisma.payment.findMany({
+    where: { serviceOrderId },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      valorPago: true,
+      forma: true,
+      status: true,
+      createdAt: true,
+      dataPagamento: true,
+    },
+  });
+  for (const p of pagamentos) {
+    eventos.push({
+      id: `pag-${p.id}`,
+      kind: "pagamento",
+      titulo: `Pagamento registrado (${p.status})`,
+      detalhe: `${formatPagamentoForma(p.forma)} · ${moneyLabel(num(p.valorPago))}`,
+      data: p.dataPagamento ?? p.createdAt,
+    });
+  }
+
+  // Ordena do mais recente para o mais antigo.
+  eventos.sort((a, b) => b.data.getTime() - a.data.getTime());
+  return eventos;
+}
+
+function moneyLabel(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+function formatPagamentoForma(forma: string): string {
+  const map: Record<string, string> = {
+    DINHEIRO: "Dinheiro",
+    PIX: "PIX",
+    CARTAO_DEBITO: "Cartão de débito",
+    CARTAO_CREDITO: "Cartão de crédito",
+    BOLETO: "Boleto",
+    TRANSFERENCIA: "Transferência",
+  };
+  return map[forma] ?? forma;
+}

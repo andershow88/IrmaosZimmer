@@ -150,7 +150,7 @@ export function AppShell({
           {iconOnly ? <Logo compact /> : <Logo />}
         </div>
 
-        <SidebarNav iconOnly={iconOnly} />
+        <SidebarNav iconOnly={iconOnly} role={role} />
 
         {/* Toggle de colapso da sidebar */}
         <div
@@ -214,7 +214,7 @@ export function AppShell({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <SidebarNav onNavigate={() => setDrawerOpen(false)} />
+            <SidebarNav onNavigate={() => setDrawerOpen(false)} role={role} />
           </aside>
         </div>
       )}

@@ -10,6 +10,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type AgendaModo = "calendario" | "lista";
 export type CalendarView = "semana" | "dia";
@@ -30,9 +31,9 @@ export interface CalendarToggleProps {
 }
 
 /**
- * Barra de controle da agenda: alterna Calendário | Lista, Semana | Dia e
- * navega entre períodos (anterior / Hoje / próximo). Tudo via querystring,
- * preservando os filtros existentes (status, mecânico, busca).
+ * Barra de controle da agenda: alterna Calendário | Lista, Semana | Dia (via
+ * Tabs acessíveis) e navega entre períodos (anterior / Hoje / próximo). Tudo via
+ * querystring, preservando os filtros existentes (status, mecânico, busca).
  */
 export function CalendarToggle({
   modo,
@@ -66,20 +67,21 @@ export function CalendarToggle({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {/* Modo: Calendário | Lista */}
-      <div className="inline-flex rounded-xl border border-border bg-surface p-0.5">
-        <SegButton
-          active={modo === "calendario"}
-          onClick={() => go({ modo: null })}
-          icon={CalendarRange}
-          label="Calendário"
-        />
-        <SegButton
-          active={modo === "lista"}
-          onClick={() => go({ modo: "lista" })}
-          icon={List}
-          label="Lista"
-        />
-      </div>
+      <Tabs
+        value={modo}
+        onValueChange={(v) => go({ modo: v === "calendario" ? null : v })}
+      >
+        <TabsList aria-label="Modo de visualização da agenda">
+          <TabsTrigger value="calendario">
+            <CalendarRange className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Calendário</span>
+          </TabsTrigger>
+          <TabsTrigger value="lista">
+            <List className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Lista</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {modo === "calendario" && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -89,16 +91,16 @@ export function CalendarToggle({
               type="button"
               aria-label="Período anterior"
               onClick={() => go({ ref: refAnterior })}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition hover:bg-surface-2"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition hover:bg-surface-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={() => go({ ref: null })}
               disabled={isHoje}
               className={cn(
-                "h-9 rounded-lg border border-border px-3 text-sm font-semibold transition",
+                "h-9 rounded-lg border border-border px-3 text-sm font-semibold transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isHoje
                   ? "cursor-default bg-accent-soft text-accent"
                   : "bg-surface text-foreground hover:bg-surface-2"
@@ -110,9 +112,9 @@ export function CalendarToggle({
               type="button"
               aria-label="Próximo período"
               onClick={() => go({ ref: refProximo })}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition hover:bg-surface-2"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition hover:bg-surface-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
             <span className="ml-1 min-w-0 text-sm font-semibold capitalize text-foreground">
               {periodoLabel}
@@ -120,51 +122,23 @@ export function CalendarToggle({
           </div>
 
           {/* Visão: Semana | Dia */}
-          <div className="inline-flex rounded-xl border border-border bg-surface p-0.5">
-            <SegButton
-              active={view === "semana"}
-              onClick={() => go({ view: null })}
-              icon={CalendarDays}
-              label="Semana"
-            />
-            <SegButton
-              active={view === "dia"}
-              onClick={() => go({ view: "dia" })}
-              icon={Calendar}
-              label="Dia"
-            />
-          </div>
+          <Tabs
+            value={view}
+            onValueChange={(v) => go({ view: v === "semana" ? null : v })}
+          >
+            <TabsList aria-label="Período do calendário">
+              <TabsTrigger value="semana">
+                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Semana</span>
+              </TabsTrigger>
+              <TabsTrigger value="dia">
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Dia</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       )}
     </div>
-  );
-}
-
-function SegButton({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: typeof List;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition",
-        active
-          ? "bg-accent text-white shadow-sm"
-          : "text-muted hover:bg-surface-2 hover:text-foreground"
-      )}
-    >
-      <Icon className="h-4 w-4" />
-      <span className="hidden sm:inline">{label}</span>
-    </button>
   );
 }

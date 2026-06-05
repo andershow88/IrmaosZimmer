@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUserForAction } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 const COMBUSTIVEIS = [
   "GASOLINA",
@@ -222,6 +223,77 @@ export async function deleteVeiculo(id: string): Promise<VeiculoActionState> {
 
   await prisma.vehicle.delete({ where: { id } });
 
+  // Não redireciona: o cliente decide o destino (lista atualiza no local, o
+  // detalhe navega para a lista) — espelha o padrão de deleteCliente e evita
+  // o toast inalcançável após o throw do redirect().
   revalidatePath("/painel/veiculos");
-  redirect("/painel/veiculos");
+  return { ok: true };
+}
+
+/* ============================================================
+   Registrar quilometragem — ação simples e aditiva.
+   Atualiza somente o campo `quilometragem` do veículo (sem tocar
+   na demais lógica de negócio). Validada e auditada.
+   ============================================================ */
+
+const kmSchema = z.coerce
+  .number({ invalid_type_error: "Informe uma quilometragem válida." })
+  .int("A quilometragem deve ser um número inteiro.")
+  .min(0, "A quilometragem não pode ser negativa.")
+  .max(9_999_999, "Quilometragem fora do intervalo permitido.");
+
+export type RegistrarKmResult =
+  | { ok: true; quilometragem: number }
+  | { ok: false; error: string };
+
+export async function registrarQuilometragem(
+  id: string,
+  quilometragem: number | string
+): Promise<RegistrarKmResult> {
+  const user = await requireUserForAction();
+
+  if (!id) return { ok: false, error: "Veículo não encontrado." };
+
+  const parsed = kmSchema.safeParse(quilometragem);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Quilometragem inválida.",
+    };
+  }
+
+  const veiculo = await prisma.vehicle.findUnique({
+    where: { id },
+    select: { id: true, quilometragem: true },
+  });
+  if (!veiculo) return { ok: false, error: "Veículo não encontrado." };
+
+  const km = parsed.data;
+  if (veiculo.quilometragem != null && km < veiculo.quilometragem) {
+    return {
+      ok: false,
+      error: `A quilometragem informada (${km.toLocaleString(
+        "pt-BR"
+      )} km) é menor que a registrada (${veiculo.quilometragem.toLocaleString(
+        "pt-BR"
+      )} km).`,
+    };
+  }
+
+  await prisma.vehicle.update({
+    where: { id },
+    data: { quilometragem: km },
+  });
+
+  await logAudit(
+    user.id,
+    "ATUALIZAR",
+    "Vehicle",
+    id,
+    `Quilometragem atualizada para ${km} km`
+  );
+
+  revalidatePath("/painel/veiculos");
+  revalidatePath(`/painel/veiculos/${id}`);
+  return { ok: true, quilometragem: km };
 }

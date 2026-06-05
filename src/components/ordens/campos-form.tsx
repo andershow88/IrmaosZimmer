@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/toast";
 import { updateCampos, resumirOSComIA } from "@/server/ordens";
 
 export type CamposIniciais = {
@@ -22,9 +23,15 @@ export type CamposIniciais = {
 export function CamposForm({
   serviceOrderId,
   iniciais,
+  formId,
+  hideSubmit = false,
 }: {
   serviceOrderId: string;
   iniciais: CamposIniciais;
+  /** Id do <form> — permite que a action bar dispare o submit por `form={id}`. */
+  formId?: string;
+  /** Esconde o botão "Salvar" interno (quando a action bar já oferece o salvar). */
+  hideSubmit?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -42,9 +49,15 @@ export function CamposForm({
       const res = await updateCampos(serviceOrderId, fd);
       if (res.ok) {
         setSalvo(true);
+        toast({ title: "Alterações salvas", variant: "success" });
         router.refresh();
       } else {
         setError(res.error ?? "Erro ao salvar.");
+        toast({
+          title: "Erro ao salvar",
+          description: res.error,
+          variant: "error",
+        });
       }
     });
   }
@@ -67,7 +80,7 @@ export function CamposForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form id={formId} onSubmit={onSubmit} className="flex flex-col gap-4">
       <div>
         <Label htmlFor="problemaRelatado">Problema relatado</Label>
         <Textarea
@@ -164,10 +177,12 @@ export function CamposForm({
       <div className="flex items-center justify-end gap-3">
         {salvo && <span className="text-sm font-medium text-success">Salvo!</span>}
         {error && <span className="text-sm font-medium text-danger">{error}</span>}
-        <Button type="submit" disabled={pending}>
-          <Save className="h-4 w-4" />
-          {pending ? "Salvando…" : "Salvar alterações"}
-        </Button>
+        {!hideSubmit && (
+          <Button type="submit" disabled={pending}>
+            <Save className="h-4 w-4" />
+            {pending ? "Salvando…" : "Salvar alterações"}
+          </Button>
+        )}
       </div>
     </form>
   );

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  NAV_GROUPS,
+  visibleGroups,
   isGroupActive,
   isItemActive,
   type NavGroup,
@@ -36,13 +36,17 @@ function readCollapsedGroups(): Record<string, boolean> {
 export function SidebarNav({
   iconOnly = false,
   onNavigate,
+  role,
 }: {
   iconOnly?: boolean;
   onNavigate?: () => void;
+  /** Função do usuário atual: filtra itens restritos por papel. */
+  role?: string;
 }) {
   const pathname = usePathname() ?? "";
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
+  const groups = visibleGroups(role);
 
   useEffect(() => {
     setCollapsed(readCollapsedGroups());
@@ -69,7 +73,7 @@ export function SidebarNav({
         iconOnly ? "px-2" : "px-3"
       )}
     >
-      {NAV_GROUPS.map((group) => (
+      {groups.map((group) => (
         <Group
           key={group.id}
           group={group}

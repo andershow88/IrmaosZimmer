@@ -3,27 +3,36 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Wrench, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RowActions } from "@/components/ui/dropdown-menu";
+import { toast } from "@/components/ui/toast";
 import { formatBRL } from "@/lib/utils";
-import { removeItem } from "@/server/ordens";
+import { removeItem, readdItem } from "@/server/ordens";
 
 export type OSItem = {
   id: string;
   tipo: "SERVICO" | "PECA";
   descricao: string;
+  unidade?: string;
   quantidade: number;
   precoUnitario: number;
+  /** Desconto unitário/total já aplicado (apenas exibição). */
+  desconto?: number;
   subtotal: number;
+  /** Referências para permitir desfazer a remoção (re-adicionar). */
+  serviceId?: string | null;
+  partId?: string | null;
 };
 
 export function ItemList({
+  serviceOrderId,
   items,
   podeRemover,
 }: {
+  serviceOrderId: string;
   items: OSItem[];
   podeRemover: boolean;
 }) {
@@ -32,14 +41,56 @@ export function ItemList({
   const [error, setError] = useState<string | null>(null);
   const [toRemove, setToRemove] = useState<OSItem | null>(null);
 
+  const totalGeral = items.reduce((acc, i) => acc + i.subtotal, 0);
+
+  function desfazerRemocao(item: OSItem) {
+    startTransition(async () => {
+      const res = await readdItem({
+        serviceOrderId,
+        tipo: item.tipo,
+        serviceId: item.serviceId ?? null,
+        partId: item.partId ?? null,
+        quantidade: item.quantidade,
+      });
+      if (res.ok) {
+        toast({ title: "Remoção desfeita", variant: "success" });
+        router.refresh();
+      } else {
+        toast({
+          title: "Não foi possível desfazer",
+          description: res.error,
+          variant: "error",
+        });
+      }
+    });
+  }
+
   function confirmRemove() {
     if (!toRemove) return;
     setError(null);
-    const id = toRemove.id;
+    const item = toRemove;
     startTransition(async () => {
-      const res = await removeItem(id);
+      const res = await removeItem(item.id);
       if (res.ok) {
         setToRemove(null);
+        // Toast com ação "Desfazer" (re-adiciona o item removido).
+        toast({
+          title: "Item removido",
+          description: (
+            <span className="flex items-center gap-2">
+              <span className="truncate">{item.descricao}</span>
+              <button
+                type="button"
+                onClick={() => desfazerRemocao(item)}
+                className="shrink-0 font-semibold text-accent underline underline-offset-2 hover:text-accent/80 cursor-pointer"
+              >
+                Desfazer
+              </button>
+            </span>
+          ),
+          variant: "info",
+          duration: 8000,
+        });
         router.refresh();
       } else {
         setError(res.error ?? "Erro ao remover item.");
@@ -63,12 +114,28 @@ export function ItemList({
       <Table>
         <THead>
           <TR>
-            <TH>Tipo</TH>
-            <TH>Descrição</TH>
-            <TH className="text-right">Qtd.</TH>
-            <TH className="text-right">Unitário</TH>
-            <TH className="text-right">Subtotal</TH>
-            {podeRemover && <TH className="text-right">Ações</TH>}
+            <TH scope="col">Tipo</TH>
+            <TH scope="col">Descrição</TH>
+            <TH scope="col" className="text-center">
+              Un.
+            </TH>
+            <TH scope="col" className="text-right">
+              Qtd.
+            </TH>
+            <TH scope="col" className="text-right">
+              Preço unit.
+            </TH>
+            <TH scope="col" className="text-right">
+              Desconto
+            </TH>
+            <TH scope="col" className="text-right">
+              Subtotal
+            </TH>
+            {podeRemover && (
+              <TH scope="col" className="text-right">
+                <span className="sr-only">Ações</span>
+              </TH>
+            )}
           </TR>
         </THead>
         <TBody>
@@ -85,28 +152,45 @@ export function ItemList({
                 </Badge>
               </TD>
               <TD className="font-medium">{i.descricao}</TD>
+              <TD className="text-center text-muted">{i.unidade ?? "un"}</TD>
               <TD className="text-right tabular-nums">{i.quantidade}</TD>
               <TD className="text-right tabular-nums">{formatBRL(i.precoUnitario)}</TD>
+              <TD className="text-right tabular-nums text-muted">
+                {i.desconto && i.desconto > 0 ? `− ${formatBRL(i.desconto)}` : "—"}
+              </TD>
               <TD className="text-right font-semibold tabular-nums">
                 {formatBRL(i.subtotal)}
               </TD>
               {podeRemover && (
                 <TD className="text-right">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label="Remover item"
-                    disabled={pending}
-                    onClick={() => setToRemove(i)}
-                  >
-                    <Trash2 className="h-4 w-4 text-danger" />
-                  </Button>
+                  <RowActions
+                    label={`Ações do item ${i.descricao}`}
+                    items={[
+                      {
+                        label: "Remover item",
+                        icon: Trash2,
+                        variant: "danger",
+                        disabled: pending,
+                        onClick: () => setToRemove(i),
+                      },
+                    ]}
+                  />
                 </TD>
               )}
             </TR>
           ))}
         </TBody>
       </Table>
+
+      {/* Total recalculado visível */}
+      <div className="flex justify-end border-t border-border pt-3">
+        <div className="flex items-baseline gap-3">
+          <span className="text-sm text-muted">Soma dos itens</span>
+          <span className="text-lg font-bold tabular-nums text-accent">
+            {formatBRL(totalGeral)}
+          </span>
+        </div>
+      </div>
 
       {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
@@ -116,8 +200,8 @@ export function ItemList({
         description={
           toRemove
             ? toRemove.tipo === "PECA"
-              ? `Remover "${toRemove.descricao}"? O estoque será devolvido (${toRemove.quantidade} un.).`
-              : `Remover o serviço "${toRemove.descricao}" desta OS?`
+              ? `Remover "${toRemove.descricao}"? O estoque será devolvido (${toRemove.quantidade} un.). Você poderá desfazer logo após.`
+              : `Remover o serviço "${toRemove.descricao}" desta OS? Você poderá desfazer logo após.`
             : ""
         }
         confirmLabel="Remover"
