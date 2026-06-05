@@ -90,7 +90,7 @@ export function AssistantChat() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-13rem)] min-h-[28rem] flex-col rounded-2xl border border-border bg-bg-elevated shadow-sm">
+    <div className="flex h-[calc(100dvh-13rem)] min-h-[28rem] flex-col rounded-2xl border border-border bg-bg-elevated shadow-sm">
       {/* Cabeçalho */}
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">

@@ -328,6 +328,30 @@ Após `npm run db:seed`, a senha de **todos** os usuários é `zimmer123`:
 
 ---
 
+## Qualidade, Acessibilidade & SEO
+
+Refactor de UI/UX em 7 fases (registro completo em
+[`UI_UX_CHANGELOG.md`](./UI_UX_CHANGELOG.md); guia de novos componentes em
+[`docs/FORM_PATTERNS.md`](./docs/FORM_PATTERNS.md)):
+
+- **Design system** — tokens claro/escuro, foco visível consistente
+  (`focus-visible`), `prefers-reduced-motion` global e primitivos reutilizáveis
+  em `src/components/ui/` (DataTable, RowActions, FilterBar, Tabs, Modal,
+  ConfirmDialog, Toast, Skeleton, StatusBadge, CurrencyField, DateField,
+  MarkdownResult, …).
+- **Acessibilidade** — focus trap em modais/diálogos/drawer, skip link no shell,
+  `aria-label` em icon-buttons, `aria-hidden` em ícones decorativos, alvos de
+  toque ≥ 40×40 px e alturas `dvh` no mobile.
+- **Telas operacionais e de gestão** migradas para os primitivos (listas com
+  busca server-side + paginação, badges de status unificados, feedback por toast
+  e diálogos de exclusão com aviso de cascata).
+- **IA** — saídas renderizadas com Markdown seguro (sem HTML bruto) + ações
+  (copiar/regenerar) e badge de modelo/modo demonstração.
+- **SEO/site público** — `sitemap.xml`, `robots.txt`, Open Graph + Twitter Card,
+  canonical por página e JSON-LD (`AutoRepair` + breadcrumb); WhatsApp flutuante.
+- **Performance** — lazy-load de imagens, limites de listas parametrizados e
+  Suspense em seções pesadas (ex.: anexos da OS).
+
 ## Roadmap
 
 - [x] Anexos/fotos reais em OS e veículos (upload + storage local).

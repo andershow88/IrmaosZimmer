@@ -304,66 +304,52 @@ Achados-chave verificados no código real: focus ring inconsistente
 
 ---
 
-## Fase 5 — IA + Markdown Seguro ⬜ Pendente
+## Fase 5 — IA + Markdown Seguro ✅ Concluída (2026-06-05)
 
-### Telas alteradas
-- _(a preencher)_
-
-### Componentes reutilizados
-- _(a preencher)_
-
-### Novos componentes
-- _(a preencher)_
-
-### Mudanças de comportamento
-- _(a preencher)_
-
-### Correções de acessibilidade
-- _(a preencher)_
-
-### Recomendações pendentes
-- _(a preencher)_
+- **Bug crítico:** `getModel()` deixou de retornar `gpt-5.4-mini` (inexistente) →
+  `gpt-4o-mini`, com guard/trim de `OPENAI_MODEL`; `.env.example` atualizado.
+- **Novos primitivos** `src/components/ui/`: `MarkdownResult` (renderiza o
+  Markdown seguro sem-deps já existente + ações copiar / tentar-novamente /
+  fechar) e `AiBadge` (modelo configurado ou "modo demonstração").
+- `ai-buttons`, `resumo-ia` e `explicar-ia` migrados de `whitespace-pre-wrap`
+  para `MarkdownResult`; `aiModel`/`aiDemo` threaded das páginas servidor (OS,
+  checklist, orçamento) via `getModel()`/`isAIAvailable()`.
+- **Preservado:** prompts, regras anti-alucinação, logging `AiInteraction`,
+  rate-limit e o contrato tipado de `lib/ai/index.ts`.
+- **Deferido:** ação "Gerar WhatsApp" automática ao concluir a OS (baixa prioridade).
 
 ---
 
-## Fase 6 — Site Público, Agendamento, Confiança e Mobile ⬜ Pendente
+## Fase 6 — Site Público, Agendamento, Confiança e Mobile ✅ Concluída (2026-06-05)
 
-### Telas alteradas
-- _(a preencher)_
-
-### Componentes reutilizados
-- _(a preencher)_
-
-### Novos componentes
-- _(a preencher)_
-
-### Mudanças de comportamento
-- _(a preencher)_
-
-### Correções de acessibilidade
-- _(a preencher)_
-
-### Recomendações pendentes
-- _(a preencher)_
+- **SEO:** `src/app/sitemap.ts` + `src/app/robots.ts` (bloqueia `/painel`, `/api`,
+  `/entrar`); `metadataBase` + Open Graph + Twitter Card em `(site)/layout`;
+  `canonical` por página (home, serviços, sobre, acessórios, agendar, contato).
+- **Dados estruturados:** JSON-LD `schema.org/AutoRepair` na home e no contato
+  (com telefone/e-mail das `WorkshopSettings`) + `BreadcrumbList` no contato;
+  helper `src/lib/site-meta.ts` (`SITE_URL` via `NEXT_PUBLIC_SITE_URL`, OG image,
+  builders de JSON-LD).
+- **Confiança/mobile:** `FloatingWhatsApp` sticky (aparece ao rolar, reusa
+  `waLink`; número via `WorkshopSettings`); hero da home com padding responsivo.
+- **Preservado:** `api/agendar/slots`, validação/honeypot/rate-limit/LGPD do
+  `agendar-form`, `site-data.ts` (apenas consumido).
+- **Deferido:** auto-carregar a próxima data disponível no agendamento (risco
+  médio sobre o form) e ajustes finos de tipografia < 375px.
 
 ---
 
-## Fase 7 — Dark Mode, Acessibilidade, Performance, Testes e Docs ⬜ Pendente
+## Fase 7 — Dark Mode, Acessibilidade, Performance, Testes e Docs ✅ Concluída (2026-06-05)
 
-### Telas alteradas
-- _(a preencher)_
-
-### Componentes reutilizados
-- _(a preencher)_
-
-### Novos componentes
-- _(a preencher)_
-
-### Mudanças de comportamento
-- _(a preencher)_
-
-### Correções de acessibilidade
-- _(a preencher)_
-
-### Recomendações pendentes
-- _(a preencher)_
+- **Mobile/perf:** chat usa `100dvh` (antes `100vh`, cortava no mobile);
+  `server/dashboard.ts` com limites de lista parametrizados (`DASH_LIMIT`,
+  `DASH_LIMIT_COMPACT`, `DASH_LIMIT_WIDE`) no lugar de 11 números mágicos; logo do
+  rodapé com `loading="lazy"`/`decoding="async"`.
+- **Auditoria a11y/dark (já conformes, verificado):** focus trap em
+  modais/diálogos/drawer, skip link no shell, `aria-label`/`aria-hidden`,
+  `prefers-reduced-motion` global e tokens de contraste claro/escuro ≥ 4.5:1 já
+  estavam implementados nas fases anteriores — sem regressões.
+- **Docs:** novo `docs/FORM_PATTERNS.md` (guia de novos formulários/listas/deletes
+  + checklist de acessibilidade e dark mode) e seção "Qualidade, Acessibilidade &
+  SEO" no `README.md`.
+- **Deferido (notado):** Suspense/streaming nas páginas de veículos/dashboard e a
+  suíte de testes automatizados (axe/Lighthouse/E2E) — sem mudar comportamento.

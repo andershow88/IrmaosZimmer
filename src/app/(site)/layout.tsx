@@ -43,16 +43,26 @@ export const metadata: Metadata = {
   },
 };
 
+// O número do WhatsApp vem do banco (WorkshopSettings) por requisição.
+export const dynamic = "force-dynamic";
+
 export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const settings = await prisma.workshopSettings.findFirst({
-    orderBy: { updatedAt: "desc" },
-    select: { whatsapp: true },
-  });
-  const whatsapp = settings?.whatsapp?.trim() || null;
+  // Resiliente: uma falha de banco não pode derrubar o site público — apenas
+  // omite o botão flutuante de WhatsApp.
+  let whatsapp: string | null = null;
+  try {
+    const settings = await prisma.workshopSettings.findFirst({
+      orderBy: { updatedAt: "desc" },
+      select: { whatsapp: true },
+    });
+    whatsapp = settings?.whatsapp?.trim() || null;
+  } catch {
+    whatsapp = null;
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg">

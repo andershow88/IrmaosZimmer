@@ -12,6 +12,17 @@ import { ptBR } from "date-fns/locale";
 import type { StatusOS } from "@prisma/client";
 import type { Role } from "@/lib/roles";
 
+// Limites de itens exibidos nos blocos do dashboard (parametrizados para
+// permitir ajuste de UX sem caçar números mágicos pelas queries).
+/** Listas padrão (OS, pagamentos, revisões, atividade). */
+const DASH_LIMIT = 8;
+/** Blocos compactos (poucas linhas). */
+const DASH_LIMIT_COMPACT = 5;
+/** Blocos com mais espaço (ex.: últimas movimentações/atividade). */
+const DASH_LIMIT_WIDE = 10;
+/** Blocos pequenos (ex.: pagamentos pendentes em destaque). */
+const DASH_LIMIT_SMALL = 6;
+
 /** Status de OS considerados "encerrados" (não estão mais em andamento). */
 const STATUS_OS_ENCERRADOS: StatusOS[] = ["ENTREGUE", "CANCELADA"];
 
@@ -164,7 +175,7 @@ export async function getProximasEntregas(): Promise<ProximaEntrega[]> {
       status: { notIn: STATUS_OS_ENCERRADOS },
     },
     orderBy: { previsaoEntrega: "asc" },
-    take: 5,
+    take: DASH_LIMIT_COMPACT,
     select: {
       id: true,
       numero: true,
@@ -239,7 +250,7 @@ export async function getRevisoesPendentesCount(): Promise<number> {
  * Peças com estoque crítico: abaixo/igual ao mínimo (quando há mínimo) OU
  * zeradas mesmo sem mínimo definido. Zeradas são priorizadas no topo.
  */
-export async function getAlertasEstoqueBaixo(limite = 8): Promise<AlertaEstoque[]> {
+export async function getAlertasEstoqueBaixo(limite = DASH_LIMIT): Promise<AlertaEstoque[]> {
   // Prisma não compara dois campos em where; filtramos em memória.
   // Buscamos peças com mínimo definido OU sem estoque, para não esconder
   // itens zerados que não têm estoqueMinimo configurado (audit 7.10).
@@ -332,7 +343,7 @@ export async function getAgendaHoje(): Promise<AgendaItem[]> {
       status: { notIn: ["CANCELADO", "NAO_COMPARECEU"] },
     },
     orderBy: { dataHora: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: {
       id: true,
       dataHora: true,
@@ -412,7 +423,7 @@ export async function getOSAtrasadas(mecanicoId?: string): Promise<OSResumo[]> {
       ...(mecanicoId ? { mecanicoId } : {}),
     },
     orderBy: { previsaoEntrega: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: OS_SELECT,
   });
   return ordens.map(mapOS);
@@ -423,7 +434,7 @@ export async function getVeiculosRecebidos(): Promise<AgendaItem[]> {
   const ags = await prisma.appointment.findMany({
     where: { status: "VEICULO_RECEBIDO" },
     orderBy: { dataHora: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: {
       id: true,
       dataHora: true,
@@ -450,7 +461,7 @@ export async function getOSAguardandoAprovacao(): Promise<OSResumo[]> {
   const ordens = await prisma.serviceOrder.findMany({
     where: { status: "AGUARDANDO_APROVACAO" },
     orderBy: { updatedAt: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: OS_SELECT,
   });
   return ordens.map(mapOS);
@@ -461,7 +472,7 @@ export async function getOSAguardandoPecas(): Promise<OSResumo[]> {
   const ordens = await prisma.serviceOrder.findMany({
     where: { status: "AGUARDANDO_PECAS" },
     orderBy: { updatedAt: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: OS_SELECT,
   });
   return ordens.map(mapOS);
@@ -476,7 +487,7 @@ export async function getEntregasHoje(): Promise<OSResumo[]> {
       status: { notIn: STATUS_OS_ENCERRADOS },
     },
     orderBy: { previsaoEntrega: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: OS_SELECT,
   });
   return ordens.map(mapOS);
@@ -515,7 +526,7 @@ export async function getPagamentosPendentes(): Promise<PagamentoPendente[]> {
     }))
     .filter((p) => p.saldo > 0)
     .sort((a, b) => b.saldo - a.saldo)
-    .slice(0, 6);
+    .slice(0, DASH_LIMIT_SMALL);
 }
 
 export type ContaPagarItem = {
@@ -534,7 +545,7 @@ export async function getContasAPagarProximas(): Promise<ContaPagarItem[]> {
   const contas = await prisma.accountPayable.findMany({
     where: { pago: false, vencimento: { lte: limite } },
     orderBy: { vencimento: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: {
       id: true,
       descricao: true,
@@ -572,7 +583,7 @@ export async function getRevisoesAVencer(): Promise<RevisaoAVencer[]> {
       dueDate: { lte: limite },
     },
     orderBy: { dueDate: "asc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: {
       id: true,
       dueDate: true,
@@ -603,7 +614,7 @@ export type AtividadeItem = {
 export async function getAtividadeRecente(): Promise<AtividadeItem[]> {
   const logs = await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },
-    take: 8,
+    take: DASH_LIMIT,
     select: {
       id: true,
       acao: true,
@@ -631,7 +642,7 @@ export async function getMinhasOS(mecanicoId: string): Promise<OSResumo[]> {
       status: { notIn: STATUS_OS_ENCERRADOS },
     },
     orderBy: [{ previsaoEntrega: "asc" }, { dataAbertura: "asc" }],
-    take: 10,
+    take: DASH_LIMIT_WIDE,
     select: OS_SELECT,
   });
   return ordens.map(mapOS);

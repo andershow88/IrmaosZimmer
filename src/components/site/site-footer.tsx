@@ -56,6 +56,8 @@ export async function SiteFooter() {
             <img
               src="/logo.png"
               alt="Mecânica Irmãos Zimmer"
+              loading="lazy"
+              decoding="async"
               className="logo-plate h-10 w-auto"
             />
             <p className="max-w-xs text-sm leading-relaxed text-muted">

@@ -18,11 +18,17 @@ export function ExplicarIA({
 }) {
   const [pending, startTransition] = useTransition();
   const [texto, setTexto] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   function gerar() {
+    setErro(null);
     startTransition(async () => {
-      const out = await onExplicar();
-      setTexto(out);
+      try {
+        const out = await onExplicar();
+        setTexto(out);
+      } catch {
+        setErro("Não foi possível gerar a explicação. Tente novamente.");
+      }
     });
   }
 
@@ -39,6 +45,8 @@ export function ExplicarIA({
         {pending ? "Gerando..." : "Explicar com IA"}
       </Button>
 
+      {erro && <p className="text-sm font-medium text-danger">{erro}</p>}
+
       {texto && (
         <MarkdownResult
           content={texto}
@@ -47,6 +55,7 @@ export function ExplicarIA({
           demo={aiDemo}
           pending={pending}
           onRegenerate={gerar}
+          onClose={() => setTexto(null)}
         />
       )}
     </div>
