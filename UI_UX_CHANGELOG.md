@@ -85,25 +85,100 @@ Achados-chave verificados no código real: focus ring inconsistente
 
 ---
 
-## Fase 2 — Navegação, Headers, Tabelas, Forms, Dialogs e Shell Responsivo ⬜ Pendente
+## Fase 2 — Navegação, Headers, Tabelas, Forms, Dialogs e Shell Responsivo ✅ Concluída (2026-06-05)
+
+### Navegação agrupada, colapsável e persistida
+- **NAV plano → grupos semânticos** (`src/components/shell/nav-config.ts`): `NavGroup[]` com os
+  grupos do contrato — **Operação** (Dashboard/Agenda/Ordens de Serviço/Checklists),
+  **Relacionamento** (Clientes/Veículos/Avisos), **Comercial** (Orçamentos/Pagamentos),
+  **Estoque** (Peças e Estoque/Serviços/Fornecedores), **Gestão** (Financeiro/Relatórios),
+  **Inteligência** (Assistente AI) e **Sistema** (Usuários/Configurações). Todos os `href`
+  existentes foram preservados (apenas reagrupados).
+- **Rota ativa inequívoca**: `isItemActive` escolhe o item de href mais específico (mais longo)
+  entre os que casam — em `/painel/configuracoes/usuarios` destaca "Usuários", não "Configurações".
+  `isGroupActive` destaca o grupo-pai.
+- **Sidebar colapsável** (`src/components/shell/sidebar-nav.tsx`): cada grupo abre/fecha com estado
+  **persistido** em `localStorage` (`zimmeros-nav-collapsed-groups`); `aria-expanded`/`aria-controls`.
+- **Modo ícones** persistido: toggle de recolher a sidebar inteira (`zimmeros-sidebar-collapsed`),
+  com tooltips CSS em hover/focus quando colapsada.
+
+### Busca global + Command Palette
+- **`command-palette.tsx`** (`src/components/shell/`, auto-contido, `"use client"`): abre com
+  **Cmd/Ctrl+K** e ao receber o evento `window` `"open-command-palette"`. Busca em `/api/busca?q=`
+  com debounce (~220ms) + cancelamento de respostas obsoletas (AbortController + reqId).
+  Navegação por teclado (↑/↓, Enter, Esc), `role="dialog"`/`combobox`/`listbox`,
+  `aria-activedescendant`, focus trap e retorno de foco.
+- **`/api/busca`** (`src/app/api/busca/route.ts`, GET, `?q=`, protegida por sessão): busca em
+  paralelo cliente (nome/cpfCnpj/telefone), veículo (placa/modelo), OS (numero), orçamento (numero),
+  peça (codigoInterno/nome) e fornecedor (nome) → `{ grupos: [{ tipo, label, itens:[{id,titulo,subtitulo,href}] }] }`,
+  limite de 5 por grupo, `mode: "insensitive"`. Sem sessão devolve **401**.
+- **Botão de busca no topbar** dispara `window.dispatchEvent(new Event("open-command-palette"))`
+  (sem props acopladas), com variante compacta no mobile.
+
+### Breadcrumbs
+- **`breadcrumbs.tsx`** (`src/components/shell/`, `"use client"`, auto-contido): deriva de
+  `usePathname()` com mapa rota→rótulo pt-BR; IDs (cuid/uuid/numérico) viram "Detalhe"; não
+  renderiza nada na raiz `/painel`. Montado no conteúdo do shell.
 
 ### Telas alteradas
-- _(a preencher)_
+- **`src/components/shell/app-shell.tsx`** — monta `<CommandPalette/>` uma vez; botão de busca no
+  topbar; `<Breadcrumbs/>` no conteúdo; **skip link** ("Pular para o conteúdo") + `<main id="conteudo">`;
+  sidebar desktop usa o novo `<SidebarNav>` (grupos/colapso/ícones); drawer mobile com `role="dialog"`
+  + Esc; NAV plano removido.
+- **`src/components/ui/dialog.tsx`** — `ConfirmDialog` passa a usar `useFocusTrap` (de `ui/modal.tsx`):
+  trap de Tab/Shift+Tab, Esc (desligado enquanto `loading`), retorno de foco; `consequenceItems` para
+  contexto de cascata; alvos de toque dos botões icon-only elevados a 40×40.
+- **Nova rota `src/app/(app)/painel/configuracoes/usuarios/page.tsx`** — o item de menu "Usuários"
+  aponta para `/painel/configuracoes/usuarios`, que antes **não existia** (só `novo` e `[id]/editar`;
+  a listagem vivia em uma aba `useState` dentro de `/painel/configuracoes`). Criada página dedicada
+  protegida (`requireUser` + restrição a ADMINISTRADOR) que reutiliza `UsuariosLista`. Isso garante
+  o **200** exigido pelo contrato e a coerência do menu.
 
 ### Componentes reutilizados
-- _(a preencher)_
+- `Spinner`/`ErrorState` (Fase 1) na Command Palette; `UsuariosLista`/`PageHeader`/`EmptyState`
+  na nova página de Usuários; `useFocusTrap`/`useBodyScrollLock` compartilhados entre Modal/Dialog/Drawer.
 
-### Novos componentes
-- _(a preencher)_
+### Novos componentes (primitivos em `src/components/ui/`)
+- **`data-table.tsx`** — `DataTable<T>` genérica (colunas tipadas, ordenação opcional, estados de
+  loading/empty, sticky header, scroll horizontal acessível).
+- **`pagination.tsx`** — `Pagination` (páginas + "Mostrando X de Y").
+- **`dropdown-menu.tsx`** — `DropdownMenu` + `RowActions` (kebab `⋮`) para ações por linha.
+- **`tabs.tsx`** — `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent` composable (substitui o padrão
+  hardcoded de `ConfiguracoesTabs` nas próximas fases).
+- **`modal.tsx`** — `Modal` genérico promovido para `ui/` (focus trap, body scroll lock, ESC, overlay,
+  `aria-modal`/`aria-labelledby`) + hooks reutilizáveis `useFocusTrap` e `useBodyScrollLock` (agora
+  consumidos também pelo `ConfirmDialog`).
+- **`search-input.tsx`** — `SearchInput` padronizado (ícone, debounce, limpar).
+- **`filter-bar.tsx`** — `FilterBar` para filtros/abas de listagem.
 
 ### Mudanças de comportamento
-- _(a preencher)_
+- Atalho global **Cmd/Ctrl+K** abre/fecha a busca em qualquer rota do painel.
+- Estado de navegação (grupos recolhidos + sidebar colapsada) é **lembrado** entre sessões.
+- Página dedicada de Usuários acessível diretamente pela URL (deep-link), além da aba em Configurações.
 
 ### Correções de acessibilidade
-- _(a preencher)_
+- **Skip link** no shell ("Pular para o conteúdo") + `<main id="conteudo">`.
+- **Focus trap** em `ConfirmDialog`, `Modal` e na Command Palette; retorno de foco ao fechar.
+- Drawer mobile com `role="dialog"`/`aria-modal` e fechamento por Esc.
+- Alvos de toque ≥ 40×40 em botões icon-only do shell/diálogos; `focus-visible:ring` consistente.
+- `aria-current="page"` nos itens ativos; tooltips acessíveis no modo ícones.
 
-### Recomendações pendentes
-- _(a preencher)_
+### Smoke realizado (dev :3960, login admin@zimmer.com)
+- Todas as 17 rotas internas do contrato retornaram **200** (incluindo a nova
+  `/painel/configuracoes/usuarios`).
+- `GET /api/busca?q=…` com cookie → **200** com grupos preenchidos (cliente, veículo, OS, orçamento,
+  peça, fornecedor verificados); **sem cookie → 401**. Sem erros no log do servidor.
+
+### Recomendações pendentes (Fases 3–4)
+- **As páginas de módulo ainda NÃO foram migradas** para os novos primitivos
+  (`DataTable`/`Pagination`/`RowActions`/`SearchInput`/`FilterBar`/`Tabs`): listas (clientes,
+  veículos, estoque, pagamentos, financeiro, fornecedores, relatórios), formulários e a OS workspace
+  permanecem como estavam e serão migrados nas Fases 3–4.
+- Unificar os deletes duplicados em `GenericDeleteButton<T>` e converter buscas locais para o padrão
+  URL + debounce continua pendente (Fase 2/3).
+- Padrões de formulário (`FormFieldError`/`FormFooter`/`FormSection`, CSRF no painel, aviso de
+  alterações não salvas, auto-foco no 1º erro) ficam para as fases de migração de telas.
+- Migrar `ConfiguracoesTabs` para o `Tabs` genérico e consolidar toasts ad-hoc (Fase 4).
 
 ---
 
